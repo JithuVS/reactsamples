@@ -1,0 +1,87 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`renders correctly when there are no items 1`] = `
+Array [
+  <h4>
+    Forms
+  </h4>,
+  <div
+    className="section"
+  >
+    <form
+      onSubmit={[Function]}
+      style={
+        Object {
+          "width": "100%",
+        }
+      }
+    >
+      <fieldset
+        style={
+          Object {
+            "margin": "auto",
+            "marginBottom": "2%",
+            "textAlign": "end",
+            "width": "60%",
+          }
+        }
+      >
+        <legend>
+          Personal Details
+        </legend>
+        <input
+          className="fields"
+          id="firstname"
+          name="firstname"
+          placeholder="Firstname"
+          required={true}
+          type="text"
+        />
+        <input
+          className="fields"
+          id="lastname"
+          name="lastname"
+          placeholder="Lastname"
+          required={true}
+          type="text"
+        />
+        <input
+          className="fields"
+          id="email"
+          name="email"
+          placeholder="Email"
+          required={true}
+          type="email"
+        />
+        <input
+          className="fields"
+          id="tel"
+          minLength="10"
+          name="tel"
+          pattern="[0-9]+"
+          placeholder="Mobile"
+          required={true}
+          type="tel"
+        />
+        <input
+          className="fields"
+          id="address"
+          name="address"
+          placeholder="Address"
+          required={true}
+          type="address"
+        />
+        <input
+          className="buttons"
+          style={
+            Object {
+              "width": "20%",
+            }
+          }
+          type="submit"
+        />
+      </fieldset>
+    </form>
+  </div>,
+]
+`;
