@@ -35,15 +35,15 @@ const Navigation = () => {
           <Route exact path="/login">
             <Login />
           </Route>
-          <Route exact path="/">
-            <Home />
-          </Route>
           <PrivateRoute path="/contact">
             <Contact />
           </PrivateRoute>
           <PrivateRoute path="/about">
             <About />
           </PrivateRoute>
+          <Route exact path="/">
+            <Home />
+          </Route>
         </Switch>
       </BrowserRouter>
     </>
