@@ -8,7 +8,7 @@ const horizontal = {
 
 const vertical = {};
 
-function DragDrop(props) {
+const DragDrop=(props) => {
   const [completed, setCompletedTask] = useState(props.completedArray);
   const [progress, setProgressTask] = useState(props.pendingArray);
 

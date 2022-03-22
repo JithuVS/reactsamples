@@ -24,7 +24,6 @@ code {
 }
 
 .progress {
-  background-color: lightcoral;
   width: 50%;
   height: 100%;
 }
@@ -48,14 +47,13 @@ code {
   width: 80%;
   height: 100%;
   text-align: center;
-  margin-left: 20%;
+  margin-left: 22%;
   background-color: #f4f3ef;
 }
 
 .complete {
   background-color: lightgreen;
-  width: 50%;
-  height: 100%;
+  width: 33em;
 }
 
 .buttons {
@@ -67,9 +65,8 @@ code {
 }
 
 .draggable {
-  width: 100px;
-  height: 100px;
-  background-color: yellow;
+  width: 33em;
+  background-color: lightcyan;
   margin: 5px auto;
   line-height: 5em;
 }

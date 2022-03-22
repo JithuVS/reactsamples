@@ -1,4 +1,5 @@
 import DragDrop from "../dragDrop/DragDrop";
+import Charts from "../charts/Charts";
 import SideBar from "./SideBar";
 import Forms from "../forms/Forms";
 import Api from "../api/Api";
@@ -7,17 +8,17 @@ import PostWithStore from "../redux";
 import { useState } from "react";
 import Navigation from "../navigation/Navigation";
 import Main from "../errorBoundary/Main";
+import MyChart from "../charts/MyChart";
+import BarChart from "../charts/Bar";
 
 const completedArray = [{ name: "one", bgcolor: "skyblue" }],
   pendingArray = [
     { name: "Two", bgcolor: "yellow" },
     { name: "Three", bgcolor: "pink" },
   ],
-  completedAlphaArray = [{ name: "A", bgcolor: "skyblue" }],
-  pendingAlphaArray = [
-    { name: "B", bgcolor: "yellow" },
-    { name: "C", bgcolor: "pink" },
-    { name: "D", bgcolor: "red" },
+  emptyChartArray = [],
+  pendingChartArray = [
+    { id: 1, chart: BarChart, bgcolor: "yellow" }
   ];
 
 function Container() {
@@ -38,11 +39,15 @@ function Container() {
               pendingArray={pendingArray}
               horizontal={false}
             />
-            <hr></hr>
-            <DragDrop
-              completedArray={completedAlphaArray}
-              pendingArray={pendingAlphaArray}
-              horizontal={true}
+          </div>
+        ) : null}
+
+      {showDiv === "charts" ? (
+          <div id="charts">
+            <Charts
+              completedArray={emptyChartArray}
+              pendingArray={pendingChartArray}
+              horizontal={false}
             />
           </div>
         ) : null}

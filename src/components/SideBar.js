@@ -8,6 +8,9 @@ function SideBar(props) {
       <button id="dragdrop" onClick={click} className="buttons">
         Drag Drop
       </button>
+      <button id="charts" onClick={click} className="buttons">
+        Charts
+      </button>
       <button id="forms" onClick={click} className="buttons">
         Forms
       </button>
