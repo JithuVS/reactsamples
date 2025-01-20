@@ -1,0 +1,352 @@
+import React, { useState } from "react";
+
+const JsonEditor: React.FC = () => {
+  const [data, setData] = useState<any>({
+    feature: {
+      hello: {
+        key: "value",
+      },
+      "hello 2": "2",
+      "hello 3": "3",
+      newKey4: ["f", "e", "w", false],
+    },
+  });
+
+  const [expanded, setExpanded] = useState<{ [key: string]: boolean }>({});
+  const [tempKeys, setTempKeys] = useState<{ [path: string]: string }>({});
+
+  const toggleExpand = (path: string) => {
+    setExpanded((prev) => ({ ...prev, [path]: !prev[path] }));
+  };
+
+  const handleKeyChange = (path: string, newKey: string) => {
+    setTempKeys((prev) => ({ ...prev, [path]: newKey }));
+  };
+
+  const handleKeyBlur = (path: string) => {
+    const keys = path.split(".");
+    const updatedData = { ...data };
+    let current = updatedData;
+
+    const oldKey = keys[keys.length - 1];
+    const newKey = tempKeys[path] || oldKey;
+
+    if (oldKey === newKey) return;
+
+    keys.slice(0, -1).forEach((key) => {
+      current = current[key];
+    });
+
+    const value = current[oldKey];
+    delete current[oldKey];
+    current[newKey] = value;
+
+    setTempKeys((prev) => {
+      const updated = { ...prev };
+      delete updated[path];
+      return updated;
+    });
+
+    setData(updatedData);
+  };
+
+  const handleChange = (path: string, value: any) => {
+    const keys = path.split(".");
+    const updatedData = { ...data };
+    let current = updatedData;
+
+    keys.slice(0, -1).forEach((key) => {
+      current = current[key];
+    });
+
+    current[keys[keys.length - 1]] = value;
+    setData(updatedData);
+  };
+
+  const handleTypeChange = (path: string, type: string) => {
+    const updatedData = { ...data };
+    const keys = path.split(".");
+    let current = updatedData;
+
+    keys.slice(0, -1).forEach((key) => {
+      current = current[key];
+    });
+
+    const key = keys[keys.length - 1];
+    const newValue = (() => {
+      switch (type) {
+        case "number":
+          return 0;
+        case "boolean":
+          return true;
+        case "array":
+          return [];
+        case "object":
+          return {};
+        case "string":
+        default:
+          return "";
+      }
+    })();
+
+    current[key] = newValue;
+    setData(updatedData);
+
+    if (type === "object" || type === "array") {
+      toggleExpand(path);
+    }
+  };
+
+  const handleAddKey = (path: string) => {
+    const updatedData = { ...data };
+    let current = updatedData;
+
+    if (path) {
+      const keys = path.split(".");
+      keys.forEach((key) => {
+        current = current[key];
+      });
+    }
+
+    const newKey = `newKey${Object.keys(current).length + 1}`;
+    current[newKey] = "";
+
+    setData(updatedData);
+    setExpanded((prev) => ({ ...prev, [path]: true }));
+  };
+
+  const handleAddToArray = (path: string) => {
+    const keys = path.split(".");
+    const updatedData = { ...data };
+    let current = updatedData;
+
+    keys.forEach((key) => {
+      current = current[key];
+    });
+
+    if (Array.isArray(current)) {
+      current.push("");
+      setData(updatedData);
+    }
+  };
+
+  const handleDeleteFromArray = (path: string, index: number) => {
+    const keys = path.split(".");
+    const updatedData = { ...data };
+    let current = updatedData;
+
+    keys.forEach((key) => {
+      current = current[key];
+    });
+
+    if (Array.isArray(current)) {
+      current.splice(index, 1);
+      setData(updatedData);
+    }
+  };
+
+  const handleDeleteKey = (path: string) => {
+    const keys = path.split(".");
+    const updatedData = { ...data };
+    let current = updatedData;
+
+    keys.slice(0, -1).forEach((key) => {
+      current = current[key];
+    });
+
+    const keyToDelete = keys[keys.length - 1];
+    delete current[keyToDelete];
+
+    setExpanded((prev) => {
+      const updated = { ...prev };
+      Object.keys(updated).forEach((expandedKey) => {
+        if (expandedKey.startsWith(path)) {
+          delete updated[expandedKey];
+        }
+      });
+      return updated;
+    });
+
+    setData(updatedData);
+  };
+
+  const renderTree = (obj: any, path: string = "") => {
+    return (
+      <div>
+        {Object.entries(obj).map(([key, value]) => {
+          const currentPath = path ? `${path}.${key}` : key;
+          const valueType = Array.isArray(value) ? "array" : typeof value;
+
+          return (
+            <div
+              key={currentPath}
+              style={{
+                marginLeft: path ? "20px" : "0",
+                padding: "10px",
+                border: "1px solid #e0e0e0",
+                borderRadius: "5px",
+                marginBottom: "10px",
+                backgroundColor: path ? "#f9f9f9" : "#fff",
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: "15px" }}>
+                {(valueType === "object" || valueType === "array") && (
+                  <button
+                    onClick={() => toggleExpand(currentPath)}
+                    style={{
+                      background: "none",
+                      border: "none",
+                      cursor: "pointer",
+                      fontSize: "16px",
+                    }}
+                  >
+                    {expanded[currentPath] ? "▼" : "▶"}
+                  </button>
+                )}
+                {(valueType === "object" || valueType === "array") && (
+                  <button
+                    onClick={
+                      valueType === "array"
+                        ? () => handleAddToArray(currentPath)
+                        : () => handleAddKey(currentPath)
+                    }
+                    style={{
+                      background: "none",
+                      border: "none",
+                      fontSize: "20px",
+                      cursor: "pointer",
+                      color: valueType === "array" ? "#28a745" : "#007bff",
+                    }}
+                  >
+                    +
+                  </button>
+                )}
+                <input
+                  type="text"
+                  value={tempKeys[currentPath] || key}
+                  onChange={(e) => handleKeyChange(currentPath, e.target.value)}
+                  onBlur={() => handleKeyBlur(currentPath)}
+                  style={{
+                    border: "1px solid #ccc",
+                    borderRadius: "5px",
+                    padding: "8px",
+                    flexGrow: 1,
+                    background: "#fff",
+                    fontWeight: "bold",
+                    fontSize: "14px",
+                  }}
+                />
+                <TypeSelector
+                  value={valueType}
+                  onChange={(type) => handleTypeChange(currentPath, type)}
+                />
+                <button
+                  onClick={() => handleDeleteKey(currentPath)}
+                  style={{
+                    padding: "5px 10px",
+                    border: "1px solid #ff4d4d",
+                    borderRadius: "5px",
+                    cursor: "pointer",
+                    color: "#fff",
+                    backgroundColor: "#ff4d4d",
+                    fontSize: "14px",
+                  }}
+                >
+                  🗑️
+                </button>
+              </div>
+              {Array.isArray(value) &&
+                expanded[currentPath] &&
+                value.map((element, index) => (
+                  <div
+                    key={`${currentPath}[${index}]`}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      marginLeft: "40px",
+                      gap: "10px",
+                    }}
+                  >
+                    <input
+                      type="text"
+                      value={element}
+                      onChange={(e) =>
+                        handleChange(`${currentPath}.${index}`, e.target.value)
+                      }
+                      style={{
+                        border: "1px solid #ccc",
+                        borderRadius: "5px",
+                        padding: "5px",
+                        flexGrow: 2,
+                      }}
+                    />
+                    <button
+                      onClick={() => handleDeleteFromArray(currentPath, index)}
+                      style={{
+                        backgroundColor: "#ff4d4d",
+                        border: "none",
+                        color: "white",
+                        cursor: "pointer",
+                        padding: "5px 10px",
+                        borderRadius: "5px",
+                      }}
+                    >
+                      🗑️
+                    </button>
+                  </div>
+                ))}
+              {expanded[currentPath] && !Array.isArray(value) && (
+                <div>{renderTree(value, currentPath)}</div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+
+  return (
+    <div style={{ padding: "20px", fontFamily: "Arial, sans-serif" }}>
+      <h1 style={{ fontSize: "24px", marginBottom: "20px" }}>JSON Editor</h1>
+      {renderTree(data)}
+      <h2 style={{ fontSize: "20px", marginTop: "30px" }}>Output JSON</h2>
+      <pre
+        style={{
+          background: "#f4f4f4",
+          padding: "10px",
+          borderRadius: "5px",
+          overflowX: "auto",
+          fontSize: "14px",
+        }}
+      >
+        {JSON.stringify(data, null, 2)}
+      </pre>
+    </div>
+  );
+};
+
+const TypeSelector: React.FC<{
+  value: string;
+  onChange: (type: string) => void;
+}> = ({ value, onChange }) => {
+  return (
+    <select
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      style={{
+        border: "1px solid #ccc",
+        borderRadius: "5px",
+        padding: "8px",
+        fontSize: "14px",
+      }}
+    >
+      <option value="string">String</option>
+      <option value="number">Number</option>
+      <option value="boolean">Boolean</option>
+      <option value="array">Array</option>
+      <option value="object">Object</option>
+    </select>
+  );
+};
+
+export default JsonEditor;
