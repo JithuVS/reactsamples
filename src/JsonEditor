@@ -1,352 +1,352 @@
-import React, { useState } from "react";
+import React, { useState } from 'react';
+import {
+  Card,
+  CardContent,
+  Typography,
+  IconButton,
+  Box,
+  Collapse,
+  Chip,
+  Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  Stack
+} from '@mui/material';
+import {
+  ChevronDown,
+  ChevronRight,
+  Plus,
+  Edit2,
+  Trash2
+} from 'lucide-react';
 
-const JsonEditor: React.FC = () => {
-  const [data, setData] = useState<any>({
-    feature: {
-      hello: {
-        key: "value",
+interface Feature {
+  id: string;
+  name: string;
+  description: string;
+  type: 'feature' | 'subfeature' | 'action';
+  children?: Feature[];
+}
+
+// Mock data structure
+const mockFeatures: Feature[] = [
+  {
+    id: '1',
+    name: 'Dashboard',
+    description: 'Main dashboard and analytics',
+    type: 'feature',
+    children: [
+      {
+        id: '1-1',
+        name: 'Analytics',
+        description: 'View system analytics',
+        type: 'subfeature',
+        children: [
+          {
+            id: '1-1-1',
+            name: 'View Charts',
+            description: 'Access to analytics charts',
+            type: 'action'
+          },
+          {
+            id: '1-1-2',
+            name: 'Export Data',
+            description: 'Export analytics data',
+            type: 'action'
+          }
+        ]
       },
-      "hello 2": "2",
-      "hello 3": "3",
-      newKey4: ["f", "e", "w", false],
-    },
+      {
+        id: '1-2',
+        name: 'Metrics',
+        description: 'System metrics monitoring',
+        type: 'subfeature',
+        children: [
+          {
+            id: '1-2-1',
+            name: 'View Metrics',
+            description: 'Access system metrics',
+            type: 'action'
+          }
+        ]
+      }
+    ]
+  },
+  {
+    id: '2',
+    name: 'Release Management',
+    description: 'Manage software releases',
+    type: 'feature',
+    children: [
+      {
+        id: '2-1',
+        name: 'Deployments',
+        description: 'Manage deployments',
+        type: 'subfeature',
+        children: [
+          {
+            id: '2-1-1',
+            name: 'Create Deployment',
+            description: 'Create new deployment',
+            type: 'action'
+          },
+          {
+            id: '2-1-2',
+            name: 'Cancel Deployment',
+            description: 'Cancel ongoing deployment',
+            type: 'action'
+          }
+        ]
+      },
+      {
+        id: '2-2',
+        name: 'Versions',
+        description: 'Version management',
+        type: 'subfeature',
+        children: [
+          {
+            id: '2-2-1',
+            name: 'Create Version',
+            description: 'Create new version',
+            type: 'action'
+          }
+        ]
+      }
+    ]
+  },
+  {
+    id: '3',
+    name: 'Vulnerability Management',
+    description: 'Security vulnerability tracking',
+    type: 'feature',
+    children: [
+      {
+        id: '3-1',
+        name: 'Scanning',
+        description: 'Security scanning',
+        type: 'subfeature',
+        children: [
+          {
+            id: '3-1-1',
+            name: 'Run Scan',
+            description: 'Execute security scan',
+            type: 'action'
+          },
+          {
+            id: '3-1-2',
+            name: 'View Results',
+            description: 'View scan results',
+            type: 'action'
+          }
+        ]
+      },
+      {
+        id: '3-2',
+        name: 'Remediation',
+        description: 'Fix security issues',
+        type: 'subfeature',
+        children: [
+          {
+            id: '3-2-1',
+            name: 'Apply Fix',
+            description: 'Apply security fix',
+            type: 'action'
+          }
+        ]
+      }
+    ]
+  }
+];
+
+export default function Features() {
+  const [features] = useState<Feature[]>(mockFeatures);
+  const [expandedFeatures, setExpandedFeatures] = useState<Set<string>>(new Set());
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingFeature, setEditingFeature] = useState<Feature | null>(null);
+  const [formData, setFormData] = useState({
+    name: '',
+    description: '',
+    type: 'feature' as const
   });
 
-  const [expanded, setExpanded] = useState<{ [key: string]: boolean }>({});
-  const [tempKeys, setTempKeys] = useState<{ [path: string]: string }>({});
-
-  const toggleExpand = (path: string) => {
-    setExpanded((prev) => ({ ...prev, [path]: !prev[path] }));
-  };
-
-  const handleKeyChange = (path: string, newKey: string) => {
-    setTempKeys((prev) => ({ ...prev, [path]: newKey }));
-  };
-
-  const handleKeyBlur = (path: string) => {
-    const keys = path.split(".");
-    const updatedData = { ...data };
-    let current = updatedData;
-
-    const oldKey = keys[keys.length - 1];
-    const newKey = tempKeys[path] || oldKey;
-
-    if (oldKey === newKey) return;
-
-    keys.slice(0, -1).forEach((key) => {
-      current = current[key];
-    });
-
-    const value = current[oldKey];
-    delete current[oldKey];
-    current[newKey] = value;
-
-    setTempKeys((prev) => {
-      const updated = { ...prev };
-      delete updated[path];
-      return updated;
-    });
-
-    setData(updatedData);
-  };
-
-  const handleChange = (path: string, value: any) => {
-    const keys = path.split(".");
-    const updatedData = { ...data };
-    let current = updatedData;
-
-    keys.slice(0, -1).forEach((key) => {
-      current = current[key];
-    });
-
-    current[keys[keys.length - 1]] = value;
-    setData(updatedData);
-  };
-
-  const handleTypeChange = (path: string, type: string) => {
-    const updatedData = { ...data };
-    const keys = path.split(".");
-    let current = updatedData;
-
-    keys.slice(0, -1).forEach((key) => {
-      current = current[key];
-    });
-
-    const key = keys[keys.length - 1];
-    const newValue = (() => {
-      switch (type) {
-        case "number":
-          return 0;
-        case "boolean":
-          return true;
-        case "array":
-          return [];
-        case "object":
-          return {};
-        case "string":
-        default:
-          return "";
+  const toggleExpand = (id: string) => {
+    setExpandedFeatures(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
       }
-    })();
+      return next;
+    });
+  };
 
-    current[key] = newValue;
-    setData(updatedData);
-
-    if (type === "object" || type === "array") {
-      toggleExpand(path);
+  const getTypeColor = (type: string) => {
+    switch (type) {
+      case 'feature':
+        return '#1976d2';
+      case 'subfeature':
+        return '#2e7d32';
+      case 'action':
+        return '#ed6c02';
+      default:
+        return '#757575';
     }
   };
 
-  const handleAddKey = (path: string) => {
-    const updatedData = { ...data };
-    let current = updatedData;
-
-    if (path) {
-      const keys = path.split(".");
-      keys.forEach((key) => {
-        current = current[key];
-      });
-    }
-
-    const newKey = `newKey${Object.keys(current).length + 1}`;
-    current[newKey] = "";
-
-    setData(updatedData);
-    setExpanded((prev) => ({ ...prev, [path]: true }));
-  };
-
-  const handleAddToArray = (path: string) => {
-    const keys = path.split(".");
-    const updatedData = { ...data };
-    let current = updatedData;
-
-    keys.forEach((key) => {
-      current = current[key];
-    });
-
-    if (Array.isArray(current)) {
-      current.push("");
-      setData(updatedData);
-    }
-  };
-
-  const handleDeleteFromArray = (path: string, index: number) => {
-    const keys = path.split(".");
-    const updatedData = { ...data };
-    let current = updatedData;
-
-    keys.forEach((key) => {
-      current = current[key];
-    });
-
-    if (Array.isArray(current)) {
-      current.splice(index, 1);
-      setData(updatedData);
-    }
-  };
-
-  const handleDeleteKey = (path: string) => {
-    const keys = path.split(".");
-    const updatedData = { ...data };
-    let current = updatedData;
-
-    keys.slice(0, -1).forEach((key) => {
-      current = current[key];
-    });
-
-    const keyToDelete = keys[keys.length - 1];
-    delete current[keyToDelete];
-
-    setExpanded((prev) => {
-      const updated = { ...prev };
-      Object.keys(updated).forEach((expandedKey) => {
-        if (expandedKey.startsWith(path)) {
-          delete updated[expandedKey];
-        }
-      });
-      return updated;
-    });
-
-    setData(updatedData);
-  };
-
-  const renderTree = (obj: any, path: string = "") => {
+  const renderFeatureCard = (feature: Feature, level = 0) => {
+    const isExpanded = expandedFeatures.has(feature.id);
+    const hasChildren = feature.children && feature.children.length > 0;
+    
     return (
-      <div>
-        {Object.entries(obj).map(([key, value]) => {
-          const currentPath = path ? `${path}.${key}` : key;
-          const valueType = Array.isArray(value) ? "array" : typeof value;
-
-          return (
-            <div
-              key={currentPath}
-              style={{
-                marginLeft: path ? "20px" : "0",
-                padding: "10px",
-                border: "1px solid #e0e0e0",
-                borderRadius: "5px",
-                marginBottom: "10px",
-                backgroundColor: path ? "#f9f9f9" : "#fff",
-              }}
-            >
-              <div style={{ display: "flex", alignItems: "center", gap: "15px" }}>
-                {(valueType === "object" || valueType === "array") && (
-                  <button
-                    onClick={() => toggleExpand(currentPath)}
-                    style={{
-                      background: "none",
-                      border: "none",
-                      cursor: "pointer",
-                      fontSize: "16px",
-                    }}
+      <Box key={feature.id} sx={{ ml: level * 3, mb: 2 }}>
+        <Card 
+          variant="outlined"
+          sx={{
+            borderColor: getTypeColor(feature.type),
+            '&:hover': {
+              boxShadow: 2
+            }
+          }}
+        >
+          <CardContent>
+            <Box display="flex" alignItems="center" justifyContent="space-between">
+              <Box display="flex" alignItems="center" gap={1}>
+                {hasChildren && (
+                  <IconButton
+                    size="small"
+                    onClick={() => toggleExpand(feature.id)}
                   >
-                    {expanded[currentPath] ? "▼" : "▶"}
-                  </button>
+                    {isExpanded ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
+                  </IconButton>
                 )}
-                {(valueType === "object" || valueType === "array") && (
-                  <button
-                    onClick={
-                      valueType === "array"
-                        ? () => handleAddToArray(currentPath)
-                        : () => handleAddKey(currentPath)
-                    }
-                    style={{
-                      background: "none",
-                      border: "none",
-                      fontSize: "20px",
-                      cursor: "pointer",
-                      color: valueType === "array" ? "#28a745" : "#007bff",
-                    }}
-                  >
-                    +
-                  </button>
-                )}
-                <input
-                  type="text"
-                  value={tempKeys[currentPath] || key}
-                  onChange={(e) => handleKeyChange(currentPath, e.target.value)}
-                  onBlur={() => handleKeyBlur(currentPath)}
-                  style={{
-                    border: "1px solid #ccc",
-                    borderRadius: "5px",
-                    padding: "8px",
-                    flexGrow: 1,
-                    background: "#fff",
-                    fontWeight: "bold",
-                    fontSize: "14px",
+                <Typography variant="h6" component="div">
+                  {feature.name}
+                </Typography>
+                <Chip
+                  label={feature.type}
+                  size="small"
+                  sx={{
+                    backgroundColor: getTypeColor(feature.type),
+                    color: 'white',
+                    ml: 1
                   }}
                 />
-                <TypeSelector
-                  value={valueType}
-                  onChange={(type) => handleTypeChange(currentPath, type)}
-                />
-                <button
-                  onClick={() => handleDeleteKey(currentPath)}
-                  style={{
-                    padding: "5px 10px",
-                    border: "1px solid #ff4d4d",
-                    borderRadius: "5px",
-                    cursor: "pointer",
-                    color: "#fff",
-                    backgroundColor: "#ff4d4d",
-                    fontSize: "14px",
+              </Box>
+              <Box>
+                <IconButton
+                  size="small"
+                  onClick={() => {
+                    setEditingFeature(feature);
+                    setFormData({
+                      name: feature.name,
+                      description: feature.description,
+                      type: feature.type
+                    });
+                    setIsModalOpen(true);
                   }}
                 >
-                  🗑️
-                </button>
-              </div>
-              {Array.isArray(value) &&
-                expanded[currentPath] &&
-                value.map((element, index) => (
-                  <div
-                    key={`${currentPath}[${index}]`}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      marginLeft: "40px",
-                      gap: "10px",
-                    }}
-                  >
-                    <input
-                      type="text"
-                      value={element}
-                      onChange={(e) =>
-                        handleChange(`${currentPath}.${index}`, e.target.value)
-                      }
-                      style={{
-                        border: "1px solid #ccc",
-                        borderRadius: "5px",
-                        padding: "5px",
-                        flexGrow: 2,
-                      }}
-                    />
-                    <button
-                      onClick={() => handleDeleteFromArray(currentPath, index)}
-                      style={{
-                        backgroundColor: "#ff4d4d",
-                        border: "none",
-                        color: "white",
-                        cursor: "pointer",
-                        padding: "5px 10px",
-                        borderRadius: "5px",
-                      }}
-                    >
-                      🗑️
-                    </button>
-                  </div>
-                ))}
-              {expanded[currentPath] && !Array.isArray(value) && (
-                <div>{renderTree(value, currentPath)}</div>
-              )}
-            </div>
-          );
-        })}
-      </div>
+                  <Edit2 size={16} />
+                </IconButton>
+                <IconButton
+                  size="small"
+                  color="error"
+                >
+                  <Trash2 size={16} />
+                </IconButton>
+              </Box>
+            </Box>
+            {feature.description && (
+              <Typography color="text.secondary" sx={{ mt: 1 }}>
+                {feature.description}
+              </Typography>
+            )}
+          </CardContent>
+        </Card>
+        <Collapse in={isExpanded}>
+          <Box sx={{ mt: 2 }}>
+            {feature.children?.map(child => renderFeatureCard(child, level + 1))}
+          </Box>
+        </Collapse>
+      </Box>
     );
   };
 
   return (
-    <div style={{ padding: "20px", fontFamily: "Arial, sans-serif" }}>
-      <h1 style={{ fontSize: "24px", marginBottom: "20px" }}>JSON Editor</h1>
-      {renderTree(data)}
-      <h2 style={{ fontSize: "20px", marginTop: "30px" }}>Output JSON</h2>
-      <pre
-        style={{
-          background: "#f4f4f4",
-          padding: "10px",
-          borderRadius: "5px",
-          overflowX: "auto",
-          fontSize: "14px",
-        }}
-      >
-        {JSON.stringify(data, null, 2)}
-      </pre>
-    </div>
-  );
-};
+    <Box sx={{ p: 3 }}>
+      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+        <Typography variant="h4" component="h1">
+          Features Management
+        </Typography>
+        <Button
+          variant="contained"
+          startIcon={<Plus size={20} />}
+          onClick={() => {
+            setEditingFeature(null);
+            setFormData({ name: '', description: '', type: 'feature' });
+            setIsModalOpen(true);
+          }}
+        >
+          Add Feature
+        </Button>
+      </Box>
 
-const TypeSelector: React.FC<{
-  value: string;
-  onChange: (type: string) => void;
-}> = ({ value, onChange }) => {
-  return (
-    <select
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      style={{
-        border: "1px solid #ccc",
-        borderRadius: "5px",
-        padding: "8px",
-        fontSize: "14px",
-      }}
-    >
-      <option value="string">String</option>
-      <option value="number">Number</option>
-      <option value="boolean">Boolean</option>
-      <option value="array">Array</option>
-      <option value="object">Object</option>
-    </select>
-  );
-};
+      {features.map(feature => renderFeatureCard(feature))}
 
-export default JsonEditor;
+      <Dialog open={isModalOpen} onClose={() => setIsModalOpen(false)} maxWidth="sm" fullWidth>
+        <form onSubmit={(e) => {
+          e.preventDefault();
+          setIsModalOpen(false);
+        }}>
+          <DialogTitle>
+            {editingFeature ? 'Edit Feature' : 'Add Feature'}
+          </DialogTitle>
+          <DialogContent>
+            <Stack spacing={2} sx={{ mt: 2 }}>
+              <TextField
+                label="Name"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                fullWidth
+                required
+              />
+              <TextField
+                label="Description"
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                fullWidth
+                multiline
+                rows={3}
+              />
+              <FormControl fullWidth>
+                <InputLabel>Type</InputLabel>
+                <Select
+                  value={formData.type}
+                  label="Type"
+                  onChange={(e) => setFormData({ ...formData, type: e.target.value as 'feature' | 'subfeature' | 'action' })}
+                >
+                  <MenuItem value="feature">Feature</MenuItem>
+                  <MenuItem value="subfeature">Subfeature</MenuItem>
+                  <MenuItem value="action">Action</MenuItem>
+                </Select>
+              </FormControl>
+            </Stack>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setIsModalOpen(false)}>Cancel</Button>
+            <Button type="submit" variant="contained">
+              {editingFeature ? 'Update' : 'Create'}
+            </Button>
+          </DialogActions>
+        </form>
+      </Dialog>
+    </Box>
+  );
+}
