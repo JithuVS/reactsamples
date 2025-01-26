@@ -1,12 +1,8 @@
 import React, { useState } from 'react';
 import {
-  Card,
-  CardContent,
+  Box,
   Typography,
   IconButton,
-  Box,
-  Collapse,
-  Chip,
   Button,
   Dialog,
   DialogTitle,
@@ -17,14 +13,23 @@ import {
   MenuItem,
   FormControl,
   InputLabel,
-  Stack
+  Stack,
+  List,
+  ListItem,
+  ListItemIcon,
+  ListItemText,
+  ListItemSecondaryAction,
+  Paper
 } from '@mui/material';
 import {
   ChevronDown,
   ChevronRight,
   Plus,
   Edit2,
-  Trash2
+  Trash2,
+  Layout,
+  Layers,
+  Zap
 } from 'lucide-react';
 
 interface Feature {
@@ -35,30 +40,36 @@ interface Feature {
   children?: Feature[];
 }
 
-// Mock data structure
+// Updated mock data with the new structure
 const mockFeatures: Feature[] = [
   {
     id: '1',
     name: 'Dashboard',
-    description: 'Main dashboard and analytics',
+    description: 'Main dashboard functionality',
     type: 'feature',
     children: [
       {
         id: '1-1',
         name: 'Analytics',
-        description: 'View system analytics',
+        description: 'Analytics management',
         type: 'subfeature',
         children: [
           {
             id: '1-1-1',
-            name: 'View Charts',
-            description: 'Access to analytics charts',
+            name: 'Upload',
+            description: 'Upload analytics data',
             type: 'action'
           },
           {
             id: '1-1-2',
-            name: 'Export Data',
-            description: 'Export analytics data',
+            name: 'Create',
+            description: 'Create new analytics',
+            type: 'action'
+          },
+          {
+            id: '1-1-3',
+            name: 'Delete',
+            description: 'Delete analytics data',
             type: 'action'
           }
         ]
@@ -66,16 +77,21 @@ const mockFeatures: Feature[] = [
       {
         id: '1-2',
         name: 'Metrics',
-        description: 'System metrics monitoring',
+        description: 'Metrics management',
         type: 'subfeature',
-        children: [
-          {
-            id: '1-2-1',
-            name: 'View Metrics',
-            description: 'Access system metrics',
-            type: 'action'
-          }
-        ]
+        children: []
+      },
+      {
+        id: '1-3',
+        name: 'Export data',
+        description: 'Export dashboard data',
+        type: 'action'
+      },
+      {
+        id: '1-4',
+        name: 'Mark Scan',
+        description: 'Mark scan completion',
+        type: 'action'
       }
     ]
   },
@@ -87,76 +103,26 @@ const mockFeatures: Feature[] = [
     children: [
       {
         id: '2-1',
-        name: 'Deployments',
-        description: 'Manage deployments',
+        name: 'Release Event',
+        description: 'Manage release events',
         type: 'subfeature',
         children: [
           {
             id: '2-1-1',
-            name: 'Create Deployment',
-            description: 'Create new deployment',
+            name: 'Upload',
+            description: 'Upload release files',
             type: 'action'
           },
           {
             id: '2-1-2',
-            name: 'Cancel Deployment',
-            description: 'Cancel ongoing deployment',
-            type: 'action'
-          }
-        ]
-      },
-      {
-        id: '2-2',
-        name: 'Versions',
-        description: 'Version management',
-        type: 'subfeature',
-        children: [
-          {
-            id: '2-2-1',
-            name: 'Create Version',
-            description: 'Create new version',
-            type: 'action'
-          }
-        ]
-      }
-    ]
-  },
-  {
-    id: '3',
-    name: 'Vulnerability Management',
-    description: 'Security vulnerability tracking',
-    type: 'feature',
-    children: [
-      {
-        id: '3-1',
-        name: 'Scanning',
-        description: 'Security scanning',
-        type: 'subfeature',
-        children: [
-          {
-            id: '3-1-1',
-            name: 'Run Scan',
-            description: 'Execute security scan',
+            name: 'Create',
+            description: 'Create new release',
             type: 'action'
           },
           {
-            id: '3-1-2',
-            name: 'View Results',
-            description: 'View scan results',
-            type: 'action'
-          }
-        ]
-      },
-      {
-        id: '3-2',
-        name: 'Remediation',
-        description: 'Fix security issues',
-        type: 'subfeature',
-        children: [
-          {
-            id: '3-2-1',
-            name: 'Apply Fix',
-            description: 'Apply security fix',
+            id: '2-1-3',
+            name: 'Delete',
+            description: 'Delete release',
             type: 'action'
           }
         ]
@@ -166,10 +132,11 @@ const mockFeatures: Feature[] = [
 ];
 
 export default function Features() {
-  const [features] = useState<Feature[]>(mockFeatures);
-  const [expandedFeatures, setExpandedFeatures] = useState<Set<string>>(new Set());
+  const [features, setFeatures] = useState<Feature[]>(mockFeatures);
+  const [expandedFeatures, setExpandedFeatures] = useState<Set<string>>(new Set(['1', '2']));
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingFeature, setEditingFeature] = useState<Feature | null>(null);
+  const [parentFeature, setParentFeature] = useState<Feature | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -188,6 +155,98 @@ export default function Features() {
     });
   };
 
+  const handleDelete = (feature: Feature, parent: Feature | null = null) => {
+    if (!window.confirm('Are you sure you want to delete this item?')) return;
+
+    if (!parent) {
+      setFeatures(prev => prev.filter(f => f.id !== feature.id));
+    } else {
+      const updateChildren = (items: Feature[]): Feature[] => {
+        return items.map(item => {
+          if (item.id === parent.id) {
+            return {
+              ...item,
+              children: item.children?.filter(child => child.id !== feature.id)
+            };
+          }
+          if (item.children) {
+            return {
+              ...item,
+              children: updateChildren(item.children)
+            };
+          }
+          return item;
+        });
+      };
+      setFeatures(prev => updateChildren(prev));
+    }
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const newFeature: Feature = {
+      id: Math.random().toString(36).substr(2, 9),
+      ...formData
+    };
+
+    if (editingFeature) {
+      const updateFeature = (items: Feature[]): Feature[] => {
+        return items.map(item => {
+          if (item.id === editingFeature.id) {
+            return { ...item, ...formData };
+          }
+          if (item.children) {
+            return {
+              ...item,
+              children: updateFeature(item.children)
+            };
+          }
+          return item;
+        });
+      };
+      setFeatures(prev => updateFeature(prev));
+    } else if (parentFeature) {
+      const addChild = (items: Feature[]): Feature[] => {
+        return items.map(item => {
+          if (item.id === parentFeature.id) {
+            return {
+              ...item,
+              children: [...(item.children || []), newFeature]
+            };
+          }
+          if (item.children) {
+            return {
+              ...item,
+              children: addChild(item.children)
+            };
+          }
+          return item;
+        });
+      };
+      setFeatures(prev => addChild(prev));
+    } else {
+      setFeatures(prev => [...prev, newFeature]);
+    }
+
+    setIsModalOpen(false);
+    setEditingFeature(null);
+    setParentFeature(null);
+    setFormData({ name: '', description: '', type: 'feature' });
+  };
+
+  const getTypeIcon = (type: string) => {
+    switch (type) {
+      case 'feature':
+        return <Layout size={20} />;
+      case 'subfeature':
+        return <Layers size={20} />;
+      case 'action':
+        return <Zap size={20} />;
+      default:
+        return null;
+    }
+  };
+
   const getTypeColor = (type: string) => {
     switch (type) {
       case 'feature':
@@ -201,80 +260,92 @@ export default function Features() {
     }
   };
 
-  const renderFeatureCard = (feature: Feature, level = 0) => {
+  const renderFeatureTree = (feature: Feature, level = 0, parent: Feature | null = null) => {
     const isExpanded = expandedFeatures.has(feature.id);
     const hasChildren = feature.children && feature.children.length > 0;
+    const color = getTypeColor(feature.type);
     
     return (
-      <Box key={feature.id} sx={{ ml: level * 3, mb: 2 }}>
-        <Card 
-          variant="outlined"
+      <Box key={feature.id}>
+        <ListItem
           sx={{
-            borderColor: getTypeColor(feature.type),
+            pl: level * 4,
+            borderLeft: level > 0 ? `1px dashed ${color}` : 'none',
             '&:hover': {
-              boxShadow: 2
+              bgcolor: 'rgba(0, 0, 0, 0.04)'
             }
           }}
         >
-          <CardContent>
-            <Box display="flex" alignItems="center" justifyContent="space-between">
-              <Box display="flex" alignItems="center" gap={1}>
-                {hasChildren && (
-                  <IconButton
-                    size="small"
-                    onClick={() => toggleExpand(feature.id)}
-                  >
-                    {isExpanded ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
-                  </IconButton>
-                )}
-                <Typography variant="h6" component="div">
-                  {feature.name}
-                </Typography>
-                <Chip
-                  label={feature.type}
-                  size="small"
-                  sx={{
-                    backgroundColor: getTypeColor(feature.type),
-                    color: 'white',
-                    ml: 1
-                  }}
-                />
-              </Box>
-              <Box>
-                <IconButton
-                  size="small"
-                  onClick={() => {
-                    setEditingFeature(feature);
-                    setFormData({
-                      name: feature.name,
-                      description: feature.description,
-                      type: feature.type
-                    });
-                    setIsModalOpen(true);
-                  }}
-                >
-                  <Edit2 size={16} />
-                </IconButton>
-                <IconButton
-                  size="small"
-                  color="error"
-                >
-                  <Trash2 size={16} />
-                </IconButton>
-              </Box>
-            </Box>
-            {feature.description && (
-              <Typography color="text.secondary" sx={{ mt: 1 }}>
-                {feature.description}
-              </Typography>
+          <ListItemIcon sx={{ minWidth: 32 }}>
+            {(hasChildren || feature.type !== 'action') && (
+              <IconButton
+                size="small"
+                onClick={() => toggleExpand(feature.id)}
+                sx={{ mr: 1 }}
+              >
+                {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+              </IconButton>
             )}
-          </CardContent>
-        </Card>
-        <Collapse in={isExpanded}>
-          <Box sx={{ mt: 2 }}>
-            {feature.children?.map(child => renderFeatureCard(child, level + 1))}
-          </Box>
-        </Collapse>
+          </ListItemIcon>
+          <ListItemIcon sx={{ color }}>
+            {getTypeIcon(feature.type)}
+          </ListItemIcon>
+          <ListItemText
+            primary={feature.name}
+            secondary={feature.description}
+            primaryTypographyProps={{
+              sx: { color, fontWeight: feature.type === 'feature' ? 600 : 400 }
+            }}
+          />
+          <ListItemSecondaryAction>
+            {feature.type !== 'action' && (
+              <IconButton
+                size="small"
+                onClick={() => {
+                  setEditingFeature(null);
+                  setParentFeature(feature);
+                  setFormData({
+                    name: '',
+                    description: '',
+                    type: feature.type === 'feature' ? 'subfeature' : 'action'
+                  });
+                  setIsModalOpen(true);
+                }}
+                sx={{ mr: 1 }}
+              >
+                <Plus size={16} />
+              </IconButton>
+            )}
+            <IconButton
+              size="small"
+              onClick={() => {
+                setEditingFeature(feature);
+                setParentFeature(parent);
+                setFormData({
+                  name: feature.name,
+                  description: feature.description,
+                  type: feature.type
+                });
+                setIsModalOpen(true);
+              }}
+              sx={{ mr: 1 }}
+            >
+              <Edit2 size={16} />
+            </IconButton>
+            <IconButton 
+              size="small" 
+              color="error"
+              onClick={() => handleDelete(feature, parent)}
+            >
+              <Trash2 size={16} />
+            </IconButton>
+          </ListItemSecondaryAction>
+        </ListItem>
+        {hasChildren && isExpanded && (
+          <List disablePadding>
+            {feature.children?.map(child => renderFeatureTree(child, level + 1, feature))}
+          </List>
+        )}
       </Box>
     );
   };
@@ -290,6 +361,7 @@ export default function Features() {
           startIcon={<Plus size={20} />}
           onClick={() => {
             setEditingFeature(null);
+            setParentFeature(null);
             setFormData({ name: '', description: '', type: 'feature' });
             setIsModalOpen(true);
           }}
@@ -298,15 +370,16 @@ export default function Features() {
         </Button>
       </Box>
 
-      {features.map(feature => renderFeatureCard(feature))}
+      <Paper elevation={0} sx={{ bgcolor: 'background.paper' }}>
+        <List>
+          {features.map(feature => renderFeatureTree(feature))}
+        </List>
+      </Paper>
 
       <Dialog open={isModalOpen} onClose={() => setIsModalOpen(false)} maxWidth="sm" fullWidth>
-        <form onSubmit={(e) => {
-          e.preventDefault();
-          setIsModalOpen(false);
-        }}>
+        <form onSubmit={handleSubmit}>
           <DialogTitle>
-            {editingFeature ? 'Edit Feature' : 'Add Feature'}
+            {editingFeature ? 'Edit Item' : `Add ${formData.type.charAt(0).toUpperCase() + formData.type.slice(1)}`}
           </DialogTitle>
           <DialogContent>
             <Stack spacing={2} sx={{ mt: 2 }}>
@@ -331,6 +404,7 @@ export default function Features() {
                   value={formData.type}
                   label="Type"
                   onChange={(e) => setFormData({ ...formData, type: e.target.value as 'feature' | 'subfeature' | 'action' })}
+                  disabled={!!parentFeature}
                 >
                   <MenuItem value="feature">Feature</MenuItem>
                   <MenuItem value="subfeature">Subfeature</MenuItem>
