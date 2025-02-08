@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   Box,
   Typography,
@@ -19,7 +19,9 @@ import {
   List,
   ListItem,
   Paper,
-  Chip
+  Chip,
+  SxProps,
+  Theme
 } from '@mui/material';
 import {
   ChevronDown,
@@ -32,7 +34,13 @@ import {
   Key,
   Zap
 } from 'lucide-react';
-import type { Feature, SubFeature } from '../types';
+import type { 
+  Feature, 
+  SubFeature, 
+  FormState, 
+  EditingType, 
+  FeaturePermission 
+} from '../types';
 
 const initialData: Feature[] = [
   {
@@ -79,22 +87,24 @@ const initialData: Feature[] = [
   },
 ];
 
-export default function Features() {
+const initialFormState: FormState = {
+  name: '',
+  description: null,
+  permissions: 'VIEW',
+  visibility: true,
+  actions: {}
+};
+
+export default function Features(): JSX.Element {
   const [features, setFeatures] = useState<Feature[]>(initialData);
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingType, setEditingType] = useState<'feature' | 'subfeature' | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+  const [editingType, setEditingType] = useState<EditingType>(null);
   const [editingParent, setEditingParent] = useState<Feature | null>(null);
   const [editingItem, setEditingItem] = useState<Feature | SubFeature | null>(null);
-  const [formData, setFormData] = useState({
-    name: '',
-    description: null as string | null,
-    permissions: 'VIEW',
-    visibility: true,
-    actions: {} as Record<string, boolean>
-  });
+  const [formData, setFormData] = useState<FormState>(initialFormState);
 
-  const toggleExpand = (featureName: string) => {
+  const toggleExpand = useCallback((featureName: string): void => {
     setExpandedItems(prev => {
       const next = new Set(prev);
       if (next.has(featureName)) {
@@ -104,420 +114,11 @@ export default function Features() {
       }
       return next;
     });
-  };
+  }, []);
 
-  const handleAddAction = () => {
+  const handleAddAction = useCallback((): void => {
     const newAction = window.prompt('Enter new action name:');
     if (newAction) {
       setFormData(prev => ({
         ...prev,
         actions: { ...prev.actions, [newAction.toLowerCase()]: false }
-      }));
-    }
-  };
-
-  const handleDelete = (item: Feature | SubFeature, parent?: Feature) => {
-    if (!window.confirm('Are you sure you want to delete this item?')) return;
-
-    if ('feature' in item) {
-      setFeatures(prev => prev.filter(f => f.feature !== item.feature));
-    } else if (parent) {
-      setFeatures(prev => prev.map(f => {
-        if (f.feature === parent.feature) {
-          return {
-            ...f,
-            subFeatures: f.subFeatures.filter(sf => sf.subFeature !== item.subFeature)
-          };
-        }
-        return f;
-      }));
-    }
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (editingType === 'feature') {
-      const newFeature: Feature = {
-        feature: formData.name,
-        featureDescription: formData.description,
-        featurePermissions: formData.permissions,
-        featureVisibility: formData.visibility,
-        allowedFeatureActions: formData.actions,
-        subFeatures: []
-      };
-
-      if (editingItem) {
-        setFeatures(prev => prev.map(f => 
-          f.feature === (editingItem as Feature).feature ? newFeature : f
-        ));
-      } else {
-        setFeatures(prev => [...prev, newFeature]);
-      }
-    } else if (editingType === 'subfeature' && editingParent) {
-      const newSubFeature: SubFeature = {
-        subFeature: formData.name,
-        subFeatureDescription: formData.description,
-        subFeaturePermissions: formData.permissions,
-        subFeatureVisibility: formData.visibility,
-        allowedSubFeatureActions: formData.actions
-      };
-
-      setFeatures(prev => prev.map(f => {
-        if (f.feature === editingParent.feature) {
-          return {
-            ...f,
-            subFeatures: editingItem
-              ? f.subFeatures.map(sf => 
-                  sf.subFeature === (editingItem as SubFeature).subFeature 
-                    ? newSubFeature 
-                    : sf
-                )
-              : [...f.subFeatures, newSubFeature]
-          };
-        }
-        return f;
-      }));
-    }
-
-    setIsModalOpen(false);
-    resetForm();
-  };
-
-  const resetForm = () => {
-    setFormData({
-      name: '',
-      description: null,
-      permissions: 'VIEW',
-      visibility: true,
-      actions: {}
-    });
-    setEditingType(null);
-    setEditingParent(null);
-    setEditingItem(null);
-  };
-
-  const renderFeatureTree = (feature: Feature) => {
-    const isExpanded = expandedItems.has(feature.feature);
-    
-    return (
-      <Box key={feature.feature}>
-        {/* Feature header */}
-        <Box sx={{ display: 'flex', alignItems: 'center', minHeight: 40, py: 0.5 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', flex: 1 }}>
-            <IconButton
-              size="small"
-              onClick={() => toggleExpand(feature.feature)}
-              sx={{ mr: 1.5 }}
-            >
-              {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-            </IconButton>
-            <Shield size={20} sx={{ mr: 1.5, color: 'primary.main' }} />
-            <Box sx={{ flex: 1 }}>
-              <Typography variant="body1" sx={{ 
-                fontWeight: 500, 
-                color: 'primary.main',
-                lineHeight: 1.2
-              }}>
-                {feature.feature}
-              </Typography>
-              <Stack 
-                direction="row" 
-                spacing={0.75} 
-                flexWrap="wrap" 
-                useFlexGap 
-                sx={{ mt: 0.5 }}
-              >
-                <Chip
-                  size="small"
-                  icon={<Key size={14} />}
-                  label={feature.featurePermissions}
-                  color="primary"
-                  variant="outlined"
-                />
-                {Object.entries(feature.allowedFeatureActions).map(([action, allowed]) => (
-                  <Chip
-                    key={action}
-                    size="small"
-                    icon={<Zap size={14} />}
-                    label={action}
-                    color={allowed ? "success" : "default"}
-                    variant="outlined"
-                  />
-                ))}
-              </Stack>
-            </Box>
-          </Box>
-          <Box sx={{ display: 'flex', gap: 0.5, ml: 1 }}>
-            <IconButton
-              size="small"
-              onClick={() => {
-                setEditingType('subfeature');
-                setEditingParent(feature);
-                setIsModalOpen(true);
-              }}
-            >
-              <Plus size={16} />
-            </IconButton>
-            <IconButton
-              size="small"
-              onClick={() => {
-                setEditingType('feature');
-                setEditingItem(feature);
-                setFormData({
-                  name: feature.feature,
-                  description: feature.featureDescription,
-                  permissions: feature.featurePermissions,
-                  visibility: feature.featureVisibility,
-                  actions: feature.allowedFeatureActions
-                });
-                setIsModalOpen(true);
-              }}
-            >
-              <Edit2 size={16} />
-            </IconButton>
-            <IconButton 
-              size="small" 
-              color="error"
-              onClick={() => handleDelete(feature)}
-            >
-              <Trash2 size={16} />
-            </IconButton>
-          </Box>
-        </Box>
-
-        {/* Subfeatures container */}
-        {isExpanded && feature.subFeatures.length > 0 && (
-          <Box 
-            sx={{ 
-              ml: 6.5, // Aligns with feature name
-              pl: 3, // Space for the vertical line
-              position: 'relative',
-              '&::before': {
-                content: '""',
-                position: 'absolute',
-                left: 0,
-                top: 0,
-                bottom: 0,
-                width: '1px',
-                bgcolor: 'primary.main',
-                opacity: 0.3
-              }
-            }}
-          >
-            {feature.subFeatures.map((subFeature) => (
-              <Box
-                key={subFeature.subFeature}
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  py: 0.5,
-                  pl: 2,
-                  minHeight: 40,
-                  '&:hover': { bgcolor: 'rgba(0, 0, 0, 0.04)' },
-                  position: 'relative',
-                  '&::before': {
-                    content: '""',
-                    position: 'absolute',
-                    left: -12,
-                    top: '50%',
-                    width: 12,
-                    height: '1px',
-                    bgcolor: 'primary.main',
-                    opacity: 0.3
-                  }
-                }}
-              >
-                <Settings size={20} sx={{ mr: 1.5, color: 'success.main' }} />
-                <Box sx={{ flex: 1 }}>
-                  <Typography variant="body1" sx={{ 
-                    lineHeight: 1.2,
-                    mb: 0.5
-                  }}>
-                    {subFeature.subFeature}
-                  </Typography>
-                  <Stack 
-                    direction="row" 
-                    spacing={0.75} 
-                    flexWrap="wrap" 
-                    useFlexGap 
-                    sx={{ mt: 0.5 }}
-                  >
-                    <Chip
-                      size="small"
-                      icon={<Key size={14} />}
-                      label={subFeature.subFeaturePermissions}
-                      color="primary"
-                      variant="outlined"
-                    />
-                    {Object.entries(subFeature.allowedSubFeatureActions).map(([action, allowed]) => (
-                      <Chip
-                        key={action}
-                        size="small"
-                        icon={<Zap size={14} />}
-                        label={action}
-                        color={allowed ? "success" : "default"}
-                        variant="outlined"
-                      />
-                    ))}
-                  </Stack>
-                </Box>
-                <Box sx={{ display: 'flex', gap: 0.5, ml: 1 }}>
-                  <IconButton
-                    size="small"
-                    onClick={() => {
-                      setEditingType('subfeature');
-                      setEditingParent(feature);
-                      setEditingItem(subFeature);
-                      setFormData({
-                        name: subFeature.subFeature,
-                        description: subFeature.subFeatureDescription,
-                        permissions: subFeature.subFeaturePermissions,
-                        visibility: subFeature.subFeatureVisibility,
-                        actions: subFeature.allowedSubFeatureActions
-                      });
-                      setIsModalOpen(true);
-                    }}
-                  >
-                    <Edit2 size={16} />
-                  </IconButton>
-                  <IconButton 
-                    size="small" 
-                    color="error"
-                    onClick={() => handleDelete(subFeature, feature)}
-                  >
-                    <Trash2 size={16} />
-                  </IconButton>
-                </Box>
-              </Box>
-            ))}
-          </Box>
-        )}
-      </Box>
-    );
-  };
-
-  return (
-    <Box sx={{ p: 3 }}>
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-        <Typography variant="h4" component="h1">
-          Features Management
-        </Typography>
-        <Button
-          variant="contained"
-          startIcon={<Plus size={20} />}
-          onClick={() => {
-            setEditingType('feature');
-            setIsModalOpen(true);
-          }}
-        >
-          Add Feature
-        </Button>
-      </Box>
-
-      <Paper elevation={0} sx={{ bgcolor: 'background.paper' }}>
-        <List>
-          {features.map(feature => renderFeatureTree(feature))}
-        </List>
-      </Paper>
-
-      <Dialog open={isModalOpen} onClose={() => setIsModalOpen(false)} maxWidth="sm" fullWidth>
-        <form onSubmit={handleSubmit}>
-          <DialogTitle>
-            {editingItem ? 'Edit' : 'Add'} {editingType === 'feature' ? 'Feature' : 'Subfeature'}
-          </DialogTitle>
-          <DialogContent>
-            <Stack spacing={2} sx={{ mt: 2 }}>
-              <TextField
-                label="Name"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                fullWidth
-                required
-              />
-              <TextField
-                label="Description"
-                value={formData.description || ''}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value || null })}
-                fullWidth
-                multiline
-                rows={3}
-              />
-              <FormControl fullWidth>
-                <InputLabel>Permissions</InputLabel>
-                <Select
-                  value={formData.permissions}
-                  label="Permissions"
-                  onChange={(e) => setFormData({ ...formData, permissions: e.target.value })}
-                >
-                  <MenuItem value="VIEW">VIEW</MenuItem>
-                  <MenuItem value="EDIT">EDIT</MenuItem>
-                  <MenuItem value="ADMIN">ADMIN</MenuItem>
-                </Select>
-              </FormControl>
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={formData.visibility}
-                    onChange={(e) => setFormData({ ...formData, visibility: e.target.checked })}
-                  />
-                }
-                label="Visibility"
-              />
-              <Box>
-                <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
-                  <Typography variant="subtitle2">Actions</Typography>
-                  <Button
-                    size="small"
-                    startIcon={<Plus size={16} />}
-                    onClick={handleAddAction}
-                  >
-                    Add Action
-                  </Button>
-                </Box>
-                <Stack 
-                  direction="row" 
-                  spacing={0.75} 
-                  flexWrap="wrap" 
-                  useFlexGap
-                >
-                  {Object.entries(formData.actions).map(([action, allowed]) => (
-                    <Chip
-                      key={action}
-                      label={action}
-                      icon={<Zap size={14} />}
-                      color={allowed ? "success" : "default"}
-                      variant="outlined"
-                      onClick={() => setFormData(prev => ({
-                        ...prev,
-                        actions: {
-                          ...prev.actions,
-                          [action]: !allowed
-                        }
-                      }))}
-                      onDelete={() => setFormData(prev => {
-                        const { [action]: _, ...rest } = prev.actions;
-                        return { ...prev, actions: rest };
-                      })}
-                    />
-                  ))}
-                </Stack>
-              </Box>
-            </Stack>
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={() => {
-              setIsModalOpen(false);
-              resetForm();
-            }}>
-              Cancel
-            </Button>
-            <Button type="submit" variant="contained">
-              {editingItem ? 'Update' : 'Create'}
-            </Button>
-          </DialogActions>
-        </form>
-      </Dialog>
-    </Box>
-  );
-}
