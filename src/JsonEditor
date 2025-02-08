@@ -13,13 +13,13 @@ import {
   MenuItem,
   FormControl,
   InputLabel,
+  Switch,
+  FormControlLabel,
   Stack,
   List,
   ListItem,
-  ListItemIcon,
-  ListItemText,
-  ListItemSecondaryAction,
-  Paper
+  Paper,
+  Chip
 } from '@mui/material';
 import {
   ChevronDown,
@@ -27,324 +27,371 @@ import {
   Plus,
   Edit2,
   Trash2,
-  Layout,
-  Layers,
+  Shield,
+  Settings,
+  Key,
   Zap
 } from 'lucide-react';
+import type { Feature, SubFeature } from '../types';
 
-interface Feature {
-  id: string;
-  name: string;
-  description: string;
-  type: 'feature' | 'subfeature' | 'action';
-  children?: Feature[];
-}
-
-// Updated mock data with the new structure
-const mockFeatures: Feature[] = [
+const initialData: Feature[] = [
   {
-    id: '1',
-    name: 'Dashboard',
-    description: 'Main dashboard functionality',
-    type: 'feature',
-    children: [
+    feature: "Vulnerability Management",
+    featureDescription: null,
+    featurePermissions: "VIEW",
+    featureVisibility: true,
+    allowedFeatureActions: {},
+    subFeatures: [
       {
-        id: '1-1',
-        name: 'Analytics',
-        description: 'Analytics management',
-        type: 'subfeature',
-        children: [
-          {
-            id: '1-1-1',
-            name: 'Upload',
-            description: 'Upload analytics data',
-            type: 'action'
-          },
-          {
-            id: '1-1-2',
-            name: 'Create',
-            description: 'Create new analytics',
-            type: 'action'
-          },
-          {
-            id: '1-1-3',
-            name: 'Delete',
-            description: 'Delete analytics data',
-            type: 'action'
-          }
-        ]
+        subFeature: "Dashboard",
+        subFeatureDescription: null,
+        subFeaturePermissions: "VIEW",
+        subFeatureVisibility: true,
+        allowedSubFeatureActions: {
+          view: true,
+          lobwidgets: false,
+        },
       },
       {
-        id: '1-2',
-        name: 'Metrics',
-        description: 'Metrics management',
-        type: 'subfeature',
-        children: []
+        subFeature: "Black Duck",
+        subFeatureDescription: null,
+        subFeaturePermissions: "VIEW",
+        subFeatureVisibility: true,
+        allowedSubFeatureActions: {
+          view: true,
+          markforupload: false,
+          downloadscan: false,
+        },
       },
       {
-        id: '1-3',
-        name: 'Export data',
-        description: 'Export dashboard data',
-        type: 'action'
+        subFeature: "Checkmarx",
+        subFeatureDescription: null,
+        subFeaturePermissions: "VIEW",
+        subFeatureVisibility: true,
+        allowedSubFeatureActions: {
+          view: true,
+          markforupload: false,
+          downloadscan: false,
+          createproject: true,
+        },
       },
-      {
-        id: '1-4',
-        name: 'Mark Scan',
-        description: 'Mark scan completion',
-        type: 'action'
-      }
-    ]
+    ],
   },
-  {
-    id: '2',
-    name: 'Release Management',
-    description: 'Manage software releases',
-    type: 'feature',
-    children: [
-      {
-        id: '2-1',
-        name: 'Release Event',
-        description: 'Manage release events',
-        type: 'subfeature',
-        children: [
-          {
-            id: '2-1-1',
-            name: 'Upload',
-            description: 'Upload release files',
-            type: 'action'
-          },
-          {
-            id: '2-1-2',
-            name: 'Create',
-            description: 'Create new release',
-            type: 'action'
-          },
-          {
-            id: '2-1-3',
-            name: 'Delete',
-            description: 'Delete release',
-            type: 'action'
-          }
-        ]
-      }
-    ]
-  }
 ];
 
 export default function Features() {
-  const [features, setFeatures] = useState<Feature[]>(mockFeatures);
-  const [expandedFeatures, setExpandedFeatures] = useState<Set<string>>(new Set(['1', '2']));
+  const [features, setFeatures] = useState<Feature[]>(initialData);
+  const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingFeature, setEditingFeature] = useState<Feature | null>(null);
-  const [parentFeature, setParentFeature] = useState<Feature | null>(null);
+  const [editingType, setEditingType] = useState<'feature' | 'subfeature' | null>(null);
+  const [editingParent, setEditingParent] = useState<Feature | null>(null);
+  const [editingItem, setEditingItem] = useState<Feature | SubFeature | null>(null);
   const [formData, setFormData] = useState({
     name: '',
-    description: '',
-    type: 'feature' as const
+    description: null as string | null,
+    permissions: 'VIEW',
+    visibility: true,
+    actions: {} as Record<string, boolean>
   });
 
-  const toggleExpand = (id: string) => {
-    setExpandedFeatures(prev => {
+  const toggleExpand = (featureName: string) => {
+    setExpandedItems(prev => {
       const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
+      if (next.has(featureName)) {
+        next.delete(featureName);
       } else {
-        next.add(id);
+        next.add(featureName);
       }
       return next;
     });
   };
 
-  const handleDelete = (feature: Feature, parent: Feature | null = null) => {
+  const handleAddAction = () => {
+    const newAction = window.prompt('Enter new action name:');
+    if (newAction) {
+      setFormData(prev => ({
+        ...prev,
+        actions: { ...prev.actions, [newAction.toLowerCase()]: false }
+      }));
+    }
+  };
+
+  const handleDelete = (item: Feature | SubFeature, parent?: Feature) => {
     if (!window.confirm('Are you sure you want to delete this item?')) return;
 
-    if (!parent) {
-      setFeatures(prev => prev.filter(f => f.id !== feature.id));
-    } else {
-      const updateChildren = (items: Feature[]): Feature[] => {
-        return items.map(item => {
-          if (item.id === parent.id) {
-            return {
-              ...item,
-              children: item.children?.filter(child => child.id !== feature.id)
-            };
-          }
-          if (item.children) {
-            return {
-              ...item,
-              children: updateChildren(item.children)
-            };
-          }
-          return item;
-        });
-      };
-      setFeatures(prev => updateChildren(prev));
+    if ('feature' in item) {
+      setFeatures(prev => prev.filter(f => f.feature !== item.feature));
+    } else if (parent) {
+      setFeatures(prev => prev.map(f => {
+        if (f.feature === parent.feature) {
+          return {
+            ...f,
+            subFeatures: f.subFeatures.filter(sf => sf.subFeature !== item.subFeature)
+          };
+        }
+        return f;
+      }));
     }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const newFeature: Feature = {
-      id: Math.random().toString(36).substr(2, 9),
-      ...formData
-    };
+    
+    if (editingType === 'feature') {
+      const newFeature: Feature = {
+        feature: formData.name,
+        featureDescription: formData.description,
+        featurePermissions: formData.permissions,
+        featureVisibility: formData.visibility,
+        allowedFeatureActions: formData.actions,
+        subFeatures: []
+      };
 
-    if (editingFeature) {
-      const updateFeature = (items: Feature[]): Feature[] => {
-        return items.map(item => {
-          if (item.id === editingFeature.id) {
-            return { ...item, ...formData };
-          }
-          if (item.children) {
-            return {
-              ...item,
-              children: updateFeature(item.children)
-            };
-          }
-          return item;
-        });
+      if (editingItem) {
+        setFeatures(prev => prev.map(f => 
+          f.feature === (editingItem as Feature).feature ? newFeature : f
+        ));
+      } else {
+        setFeatures(prev => [...prev, newFeature]);
+      }
+    } else if (editingType === 'subfeature' && editingParent) {
+      const newSubFeature: SubFeature = {
+        subFeature: formData.name,
+        subFeatureDescription: formData.description,
+        subFeaturePermissions: formData.permissions,
+        subFeatureVisibility: formData.visibility,
+        allowedSubFeatureActions: formData.actions
       };
-      setFeatures(prev => updateFeature(prev));
-    } else if (parentFeature) {
-      const addChild = (items: Feature[]): Feature[] => {
-        return items.map(item => {
-          if (item.id === parentFeature.id) {
-            return {
-              ...item,
-              children: [...(item.children || []), newFeature]
-            };
-          }
-          if (item.children) {
-            return {
-              ...item,
-              children: addChild(item.children)
-            };
-          }
-          return item;
-        });
-      };
-      setFeatures(prev => addChild(prev));
-    } else {
-      setFeatures(prev => [...prev, newFeature]);
+
+      setFeatures(prev => prev.map(f => {
+        if (f.feature === editingParent.feature) {
+          return {
+            ...f,
+            subFeatures: editingItem
+              ? f.subFeatures.map(sf => 
+                  sf.subFeature === (editingItem as SubFeature).subFeature 
+                    ? newSubFeature 
+                    : sf
+                )
+              : [...f.subFeatures, newSubFeature]
+          };
+        }
+        return f;
+      }));
     }
 
     setIsModalOpen(false);
-    setEditingFeature(null);
-    setParentFeature(null);
-    setFormData({ name: '', description: '', type: 'feature' });
+    resetForm();
   };
 
-  const getTypeIcon = (type: string) => {
-    switch (type) {
-      case 'feature':
-        return <Layout size={20} />;
-      case 'subfeature':
-        return <Layers size={20} />;
-      case 'action':
-        return <Zap size={20} />;
-      default:
-        return null;
-    }
+  const resetForm = () => {
+    setFormData({
+      name: '',
+      description: null,
+      permissions: 'VIEW',
+      visibility: true,
+      actions: {}
+    });
+    setEditingType(null);
+    setEditingParent(null);
+    setEditingItem(null);
   };
 
-  const getTypeColor = (type: string) => {
-    switch (type) {
-      case 'feature':
-        return '#1976d2';
-      case 'subfeature':
-        return '#2e7d32';
-      case 'action':
-        return '#ed6c02';
-      default:
-        return '#757575';
-    }
-  };
-
-  const renderFeatureTree = (feature: Feature, level = 0, parent: Feature | null = null) => {
-    const isExpanded = expandedFeatures.has(feature.id);
-    const hasChildren = feature.children && feature.children.length > 0;
-    const color = getTypeColor(feature.type);
+  const renderFeatureTree = (feature: Feature) => {
+    const isExpanded = expandedItems.has(feature.feature);
     
     return (
-      <Box key={feature.id}>
-        <ListItem
-          sx={{
-            pl: level * 4,
-            borderLeft: level > 0 ? `1px dashed ${color}` : 'none',
-            '&:hover': {
-              bgcolor: 'rgba(0, 0, 0, 0.04)'
-            }
-          }}
-        >
-          <ListItemIcon sx={{ minWidth: 32 }}>
-            {(hasChildren || feature.type !== 'action') && (
-              <IconButton
-                size="small"
-                onClick={() => toggleExpand(feature.id)}
-                sx={{ mr: 1 }}
+      <Box key={feature.feature}>
+        {/* Feature header */}
+        <Box sx={{ display: 'flex', alignItems: 'center', minHeight: 40, py: 0.5 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', flex: 1 }}>
+            <IconButton
+              size="small"
+              onClick={() => toggleExpand(feature.feature)}
+              sx={{ mr: 1.5 }}
+            >
+              {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+            </IconButton>
+            <Shield size={20} sx={{ mr: 1.5, color: 'primary.main' }} />
+            <Box sx={{ flex: 1 }}>
+              <Typography variant="body1" sx={{ 
+                fontWeight: 500, 
+                color: 'primary.main',
+                lineHeight: 1.2
+              }}>
+                {feature.feature}
+              </Typography>
+              <Stack 
+                direction="row" 
+                spacing={0.75} 
+                flexWrap="wrap" 
+                useFlexGap 
+                sx={{ mt: 0.5 }}
               >
-                {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-              </IconButton>
-            )}
-          </ListItemIcon>
-          <ListItemIcon sx={{ color }}>
-            {getTypeIcon(feature.type)}
-          </ListItemIcon>
-          <ListItemText
-            primary={feature.name}
-            secondary={feature.description}
-            primaryTypographyProps={{
-              sx: { color, fontWeight: feature.type === 'feature' ? 600 : 400 }
-            }}
-          />
-          <ListItemSecondaryAction>
-            {feature.type !== 'action' && (
-              <IconButton
-                size="small"
-                onClick={() => {
-                  setEditingFeature(null);
-                  setParentFeature(feature);
-                  setFormData({
-                    name: '',
-                    description: '',
-                    type: feature.type === 'feature' ? 'subfeature' : 'action'
-                  });
-                  setIsModalOpen(true);
-                }}
-                sx={{ mr: 1 }}
-              >
-                <Plus size={16} />
-              </IconButton>
-            )}
+                <Chip
+                  size="small"
+                  icon={<Key size={14} />}
+                  label={feature.featurePermissions}
+                  color="primary"
+                  variant="outlined"
+                />
+                {Object.entries(feature.allowedFeatureActions).map(([action, allowed]) => (
+                  <Chip
+                    key={action}
+                    size="small"
+                    icon={<Zap size={14} />}
+                    label={action}
+                    color={allowed ? "success" : "default"}
+                    variant="outlined"
+                  />
+                ))}
+              </Stack>
+            </Box>
+          </Box>
+          <Box sx={{ display: 'flex', gap: 0.5, ml: 1 }}>
             <IconButton
               size="small"
               onClick={() => {
-                setEditingFeature(feature);
-                setParentFeature(parent);
+                setEditingType('subfeature');
+                setEditingParent(feature);
+                setIsModalOpen(true);
+              }}
+            >
+              <Plus size={16} />
+            </IconButton>
+            <IconButton
+              size="small"
+              onClick={() => {
+                setEditingType('feature');
+                setEditingItem(feature);
                 setFormData({
-                  name: feature.name,
-                  description: feature.description,
-                  type: feature.type
+                  name: feature.feature,
+                  description: feature.featureDescription,
+                  permissions: feature.featurePermissions,
+                  visibility: feature.featureVisibility,
+                  actions: feature.allowedFeatureActions
                 });
                 setIsModalOpen(true);
               }}
-              sx={{ mr: 1 }}
             >
               <Edit2 size={16} />
             </IconButton>
             <IconButton 
               size="small" 
               color="error"
-              onClick={() => handleDelete(feature, parent)}
+              onClick={() => handleDelete(feature)}
             >
               <Trash2 size={16} />
             </IconButton>
-          </ListItemSecondaryAction>
-        </ListItem>
-        {hasChildren && isExpanded && (
-          <List disablePadding>
-            {feature.children?.map(child => renderFeatureTree(child, level + 1, feature))}
-          </List>
+          </Box>
+        </Box>
+
+        {/* Subfeatures container */}
+        {isExpanded && feature.subFeatures.length > 0 && (
+          <Box 
+            sx={{ 
+              ml: 6.5, // Aligns with feature name
+              pl: 3, // Space for the vertical line
+              position: 'relative',
+              '&::before': {
+                content: '""',
+                position: 'absolute',
+                left: 0,
+                top: 0,
+                bottom: 0,
+                width: '1px',
+                bgcolor: 'primary.main',
+                opacity: 0.3
+              }
+            }}
+          >
+            {feature.subFeatures.map((subFeature) => (
+              <Box
+                key={subFeature.subFeature}
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  py: 0.5,
+                  pl: 2,
+                  minHeight: 40,
+                  '&:hover': { bgcolor: 'rgba(0, 0, 0, 0.04)' },
+                  position: 'relative',
+                  '&::before': {
+                    content: '""',
+                    position: 'absolute',
+                    left: -12,
+                    top: '50%',
+                    width: 12,
+                    height: '1px',
+                    bgcolor: 'primary.main',
+                    opacity: 0.3
+                  }
+                }}
+              >
+                <Settings size={20} sx={{ mr: 1.5, color: 'success.main' }} />
+                <Box sx={{ flex: 1 }}>
+                  <Typography variant="body1" sx={{ 
+                    lineHeight: 1.2,
+                    mb: 0.5
+                  }}>
+                    {subFeature.subFeature}
+                  </Typography>
+                  <Stack 
+                    direction="row" 
+                    spacing={0.75} 
+                    flexWrap="wrap" 
+                    useFlexGap 
+                    sx={{ mt: 0.5 }}
+                  >
+                    <Chip
+                      size="small"
+                      icon={<Key size={14} />}
+                      label={subFeature.subFeaturePermissions}
+                      color="primary"
+                      variant="outlined"
+                    />
+                    {Object.entries(subFeature.allowedSubFeatureActions).map(([action, allowed]) => (
+                      <Chip
+                        key={action}
+                        size="small"
+                        icon={<Zap size={14} />}
+                        label={action}
+                        color={allowed ? "success" : "default"}
+                        variant="outlined"
+                      />
+                    ))}
+                  </Stack>
+                </Box>
+                <Box sx={{ display: 'flex', gap: 0.5, ml: 1 }}>
+                  <IconButton
+                    size="small"
+                    onClick={() => {
+                      setEditingType('subfeature');
+                      setEditingParent(feature);
+                      setEditingItem(subFeature);
+                      setFormData({
+                        name: subFeature.subFeature,
+                        description: subFeature.subFeatureDescription,
+                        permissions: subFeature.subFeaturePermissions,
+                        visibility: subFeature.subFeatureVisibility,
+                        actions: subFeature.allowedSubFeatureActions
+                      });
+                      setIsModalOpen(true);
+                    }}
+                  >
+                    <Edit2 size={16} />
+                  </IconButton>
+                  <IconButton 
+                    size="small" 
+                    color="error"
+                    onClick={() => handleDelete(subFeature, feature)}
+                  >
+                    <Trash2 size={16} />
+                  </IconButton>
+                </Box>
+              </Box>
+            ))}
+          </Box>
         )}
       </Box>
     );
@@ -360,9 +407,7 @@ export default function Features() {
           variant="contained"
           startIcon={<Plus size={20} />}
           onClick={() => {
-            setEditingFeature(null);
-            setParentFeature(null);
-            setFormData({ name: '', description: '', type: 'feature' });
+            setEditingType('feature');
             setIsModalOpen(true);
           }}
         >
@@ -379,7 +424,7 @@ export default function Features() {
       <Dialog open={isModalOpen} onClose={() => setIsModalOpen(false)} maxWidth="sm" fullWidth>
         <form onSubmit={handleSubmit}>
           <DialogTitle>
-            {editingFeature ? 'Edit Item' : `Add ${formData.type.charAt(0).toUpperCase() + formData.type.slice(1)}`}
+            {editingItem ? 'Edit' : 'Add'} {editingType === 'feature' ? 'Feature' : 'Subfeature'}
           </DialogTitle>
           <DialogContent>
             <Stack spacing={2} sx={{ mt: 2 }}>
@@ -392,31 +437,83 @@ export default function Features() {
               />
               <TextField
                 label="Description"
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                value={formData.description || ''}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value || null })}
                 fullWidth
                 multiline
                 rows={3}
               />
               <FormControl fullWidth>
-                <InputLabel>Type</InputLabel>
+                <InputLabel>Permissions</InputLabel>
                 <Select
-                  value={formData.type}
-                  label="Type"
-                  onChange={(e) => setFormData({ ...formData, type: e.target.value as 'feature' | 'subfeature' | 'action' })}
-                  disabled={!!parentFeature}
+                  value={formData.permissions}
+                  label="Permissions"
+                  onChange={(e) => setFormData({ ...formData, permissions: e.target.value })}
                 >
-                  <MenuItem value="feature">Feature</MenuItem>
-                  <MenuItem value="subfeature">Subfeature</MenuItem>
-                  <MenuItem value="action">Action</MenuItem>
+                  <MenuItem value="VIEW">VIEW</MenuItem>
+                  <MenuItem value="EDIT">EDIT</MenuItem>
+                  <MenuItem value="ADMIN">ADMIN</MenuItem>
                 </Select>
               </FormControl>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={formData.visibility}
+                    onChange={(e) => setFormData({ ...formData, visibility: e.target.checked })}
+                  />
+                }
+                label="Visibility"
+              />
+              <Box>
+                <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
+                  <Typography variant="subtitle2">Actions</Typography>
+                  <Button
+                    size="small"
+                    startIcon={<Plus size={16} />}
+                    onClick={handleAddAction}
+                  >
+                    Add Action
+                  </Button>
+                </Box>
+                <Stack 
+                  direction="row" 
+                  spacing={0.75} 
+                  flexWrap="wrap" 
+                  useFlexGap
+                >
+                  {Object.entries(formData.actions).map(([action, allowed]) => (
+                    <Chip
+                      key={action}
+                      label={action}
+                      icon={<Zap size={14} />}
+                      color={allowed ? "success" : "default"}
+                      variant="outlined"
+                      onClick={() => setFormData(prev => ({
+                        ...prev,
+                        actions: {
+                          ...prev.actions,
+                          [action]: !allowed
+                        }
+                      }))}
+                      onDelete={() => setFormData(prev => {
+                        const { [action]: _, ...rest } = prev.actions;
+                        return { ...prev, actions: rest };
+                      })}
+                    />
+                  ))}
+                </Stack>
+              </Box>
             </Stack>
           </DialogContent>
           <DialogActions>
-            <Button onClick={() => setIsModalOpen(false)}>Cancel</Button>
+            <Button onClick={() => {
+              setIsModalOpen(false);
+              resetForm();
+            }}>
+              Cancel
+            </Button>
             <Button type="submit" variant="contained">
-              {editingFeature ? 'Update' : 'Create'}
+              {editingItem ? 'Update' : 'Create'}
             </Button>
           </DialogActions>
         </form>
