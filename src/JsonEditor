@@ -1,124 +1,176 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import {
   Box,
+  Paper,
   Typography,
-  IconButton,
-  Button,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
-  Switch,
-  FormControlLabel,
-  Stack,
   List,
   ListItem,
-  Paper,
-  Chip,
-  SxProps,
-  Theme
+  ListItemText,
+  IconButton,
+  Divider,
+  TextField,
+  InputAdornment
 } from '@mui/material';
-import {
-  ChevronDown,
-  ChevronRight,
-  Plus,
-  Edit2,
-  Trash2,
-  Shield,
-  Settings,
-  Key,
-  Zap
-} from 'lucide-react';
-import type { 
-  Feature, 
-  SubFeature, 
-  FormState, 
-  EditingType, 
-  FeaturePermission 
-} from '../types';
+import { ChevronRight, ChevronLeft, Search } from 'lucide-react';
 
-const initialData: Feature[] = [
-  {
-    feature: "Vulnerability Management",
-    featureDescription: null,
-    featurePermissions: "VIEW",
-    featureVisibility: true,
-    allowedFeatureActions: {},
-    subFeatures: [
-      {
-        subFeature: "Dashboard",
-        subFeatureDescription: null,
-        subFeaturePermissions: "VIEW",
-        subFeatureVisibility: true,
-        allowedSubFeatureActions: {
-          view: true,
-          lobwidgets: false,
-        },
-      },
-      {
-        subFeature: "Black Duck",
-        subFeatureDescription: null,
-        subFeaturePermissions: "VIEW",
-        subFeatureVisibility: true,
-        allowedSubFeatureActions: {
-          view: true,
-          markforupload: false,
-          downloadscan: false,
-        },
-      },
-      {
-        subFeature: "Checkmarx",
-        subFeatureDescription: null,
-        subFeaturePermissions: "VIEW",
-        subFeatureVisibility: true,
-        allowedSubFeatureActions: {
-          view: true,
-          markforupload: false,
-          downloadscan: false,
-          createproject: true,
-        },
-      },
-    ],
-  },
-];
+export interface Entitlement {
+  id: number | string;
+  entitlementName: string;
+}
 
-const initialFormState: FormState = {
-  name: '',
-  description: null,
-  permissions: 'VIEW',
-  visibility: true,
-  actions: {}
-};
+interface DualListProps {
+  availableItems: Entitlement[];
+  selectedItems: Entitlement[];
+  onSelectionChange: (selected: Entitlement[]) => void;
+  title?: string;
+}
 
-export default function Features(): JSX.Element {
-  const [features, setFeatures] = useState<Feature[]>(initialData);
-  const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
-  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
-  const [editingType, setEditingType] = useState<EditingType>(null);
-  const [editingParent, setEditingParent] = useState<Feature | null>(null);
-  const [editingItem, setEditingItem] = useState<Feature | SubFeature | null>(null);
-  const [formData, setFormData] = useState<FormState>(initialFormState);
+export function DualList({
+  availableItems,
+  selectedItems,
+  onSelectionChange,
+  title = 'Entitlements'
+}: DualListProps) {
+  const [searchAvailable, setSearchAvailable] = useState('');
+  const [searchSelected, setSearchSelected] = useState('');
 
-  const toggleExpand = useCallback((featureName: string): void => {
-    setExpandedItems(prev => {
-      const next = new Set(prev);
-      if (next.has(featureName)) {
-        next.delete(featureName);
-      } else {
-        next.add(featureName);
-      }
-      return next;
-    });
-  }, []);
+  const handleAddItem = (item: Entitlement) => {
+    onSelectionChange([...selectedItems, item]);
+  };
 
-  const handleAddAction = useCallback((): void => {
-    const newAction = window.prompt('Enter new action name:');
-    if (newAction) {
-      setFormData(prev => ({
-        ...prev,
-        actions: { ...prev.actions, [newAction.toLowerCase()]: false }
+  const handleRemoveItem = (item: Entitlement) => {
+    onSelectionChange(selectedItems.filter(i => i.id !== item.id));
+  };
+
+  const filteredAvailable = availableItems.filter(item =>
+    item.entitlementName.toLowerCase().includes(searchAvailable.toLowerCase())
+  );
+
+  const filteredSelected = selectedItems.filter(item =>
+    item.entitlementName.toLowerCase().includes(searchSelected.toLowerCase())
+  );
+
+  const renderList = (
+    items: Entitlement[],
+    onItemClick: (item: Entitlement) => void,
+    searchValue: string,
+    onSearchChange: (value: string) => void,
+    title: string,
+    icon: React.ReactNode
+  ) => (
+    <Paper 
+      elevation={0} 
+      sx={{ 
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        border: '1px solid',
+        borderColor: 'divider',
+        borderRadius: 1
+      }}
+    >
+      <Box sx={{ p: 2, borderBottom: '1px solid', borderColor: 'divider' }}>
+        <Typography variant="subtitle2" sx={{ mb: 1, color: 'text.secondary' }}>
+          {title}
+        </Typography>
+        <TextField
+          size="small"
+          fullWidth
+          placeholder="Search..."
+          value={searchValue}
+          onChange={(e) => onSearchChange(e.target.value)}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <Search size={18} />
+              </InputAdornment>
+            ),
+          }}
+        />
+      </Box>
+      <List 
+        sx={{ 
+          overflow: 'auto',
+          flex: 1,
+          p: 0
+        }}
+      >
+        {items.map((item, index) => (
+          <React.Fragment key={item.id}>
+            {index > 0 && <Divider />}
+            <ListItem
+              sx={{
+                py: 1,
+                px: 2,
+                '&:hover': {
+                  bgcolor: 'action.hover',
+                }
+              }}
+            >
+              <ListItemText 
+                primary={item.entitlementName}
+                primaryTypographyProps={{
+                  variant: 'body2'
+                }}
+              />
+              <IconButton
+                size="small"
+                onClick={() => onItemClick(item)}
+                sx={{
+                  bgcolor: 'action.selected',
+                  '&:hover': {
+                    bgcolor: 'action.focus',
+                  }
+                }}
+              >
+                {icon}
+              </IconButton>
+            </ListItem>
+          </React.Fragment>
+        ))}
+        {items.length === 0 && (
+          <Box sx={{ p: 2, textAlign: 'center' }}>
+            <Typography variant="body2" color="text.secondary">
+              No items found
+            </Typography>
+          </Box>
+        )}
+      </List>
+    </Paper>
+  );
+
+  return (
+    <Box sx={{ width: '100%' }}>
+      {title && (
+        <Typography variant="h6" sx={{ mb: 2 }}>
+          {title}
+        </Typography>
+      )}
+      <Box
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: '1fr 1fr',
+          gap: 2,
+          minHeight: 400
+        }}
+      >
+        {renderList(
+          filteredAvailable,
+          handleAddItem,
+          searchAvailable,
+          setSearchAvailable,
+          'Available Entitlements',
+          <ChevronRight size={18} />
+        )}
+        {renderList(
+          filteredSelected,
+          handleRemoveItem,
+          searchSelected,
+          setSearchSelected,
+          'Selected Entitlements',
+          <ChevronLeft size={18} />
+        )}
+      </Box>
+    </Box>
+  );
+}
