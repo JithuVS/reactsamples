@@ -1,0 +1,49 @@
+import React from 'react';
+import { Feature, UserRole } from '../types';
+import { extractAllFeatures } from '../utils';
+import FeatureRow from './FeatureRow';
+
+interface RoleFeatureMatrixProps {
+  features: Feature[];
+  roles: UserRole[];
+}
+
+const RoleFeatureMatrix: React.FC<RoleFeatureMatrixProps> = ({ features, roles }) => {
+  const featureMap = extractAllFeatures(features);
+  
+  // Get all unique features
+  const uniqueFeatures = Object.keys(featureMap);
+
+  return (
+    <div className="overflow-x-auto">
+      <table className="min-w-full bg-white border border-gray-200">
+        <thead>
+          <tr className="bg-gray-100">
+            <th className="px-4 py-2 text-left border-b">Features</th>
+            {roles.map((role) => (
+              <th 
+                key={role.roleName} 
+                className="px-4 py-2 text-center border-b"
+              >
+                {role.roleName}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {uniqueFeatures.map((feature) => (
+            <FeatureRow
+              key={feature}
+              feature={feature}
+              featureMap={featureMap}
+              roles={roles}
+              level={0}
+            />
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+};
+
+export default RoleFeatureMatrix;
