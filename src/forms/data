@@ -1,0 +1,183 @@
+export interface NavigationItem {
+  id: string;
+  title: string;
+  description?: string;
+}
+
+export interface NavigationSection {
+  id: string;
+  title: string;
+  items: NavigationItem[];
+}
+
+export interface NavigationCategory {
+  id: string;
+  title: string;
+  description?: string;
+  sections: NavigationSection[];
+}
+
+export const navigationStructure: NavigationCategory[] = [
+  {
+    id: 'get-started',
+    title: 'Get started',
+    description: 'New to GitHub? Learn the basics with our quickstart guide.',
+    sections: [
+      {
+        id: 'quickstart',
+        title: 'Quickstart',
+        items: [
+          { id: 'hello-world', title: 'Hello World', description: 'Create your first repository and learn GitHub basics' },
+          { id: 'github-flow', title: 'GitHub flow', description: 'Learn the GitHub workflow' },
+          { id: 'create-repo', title: 'Create a repo', description: 'Create your first repository' },
+          { id: 'fork-repo', title: 'Fork a repo', description: 'Learn how to fork repositories', items: [{ id: 'hello-world', title: 'Hello World', description: 'Create your first repository and learn GitHub basics' },
+          { id: 'github-flow', title: 'GitHub flow', description: 'Learn the GitHub workflow' },] },
+        ]
+      },
+      {
+        id: 'setup',
+        title: 'Set up Git',
+        items: [
+          { id: 'set-up-git', title: 'Set up Git', description: 'Install and configure Git' },
+          { id: 'connecting-to-github', title: 'Connecting to GitHub with SSH', description: 'Set up SSH keys' },
+          { id: 'caching-credentials', title: 'Caching your GitHub credentials', description: 'Store your credentials' },
+        ]
+      }
+    ]
+  },
+  {
+    id: 'repositories',
+    title: 'Repositories',
+    description: 'Learn how to use Git and GitHub to manage your code.',
+    sections: [
+      {
+        id: 'creating-managing-repositories',
+        title: 'Creating and managing repositories',
+        items: [
+          { id: 'about-repositories', title: 'About repositories', description: 'Learn about repositories' },
+          { id: 'creating-repository', title: 'Creating a new repository', description: 'Create a new repository' },
+          { id: 'cloning-repository', title: 'Cloning a repository', description: 'Clone an existing repository' },
+          { id: 'archiving-repository', title: 'Archiving a repository', description: 'Archive old repositories' },
+        ]
+      },
+      {
+        id: 'managing-files',
+        title: 'Managing files in a repository',
+        items: [
+          { id: 'adding-files', title: 'Adding a file to a repository', description: 'Add files to your repository' },
+          { id: 'editing-files', title: 'Editing files in your repository', description: 'Edit existing files' },
+          { id: 'moving-files', title: 'Moving a file to a new location', description: 'Reorganize your files' },
+          { id: 'deleting-files', title: 'Deleting files in a repository', description: 'Remove unwanted files' },
+        ]
+      }
+    ]
+  },
+  {
+    id: 'pull-requests',
+    title: 'Pull requests',
+    description: 'Collaborate on GitHub by creating and reviewing pull requests.',
+    sections: [
+      {
+        id: 'creating-pull-requests',
+        title: 'Creating a pull request',
+        items: [
+          { id: 'about-pull-requests', title: 'About pull requests', description: 'Learn about pull requests' },
+          { id: 'creating-pull-request', title: 'Creating a pull request', description: 'Create your first pull request' },
+          { id: 'creating-pull-request-fork', title: 'Creating a pull request from a fork', description: 'Submit changes from a fork' },
+          { id: 'draft-pull-requests', title: 'About draft pull requests', description: 'Work in progress pull requests' },
+        ]
+      },
+      {
+        id: 'reviewing-pull-requests',
+        title: 'Reviewing proposed changes in a pull request',
+        items: [
+          { id: 'about-pull-request-reviews', title: 'About pull request reviews', description: 'Learn about reviewing code' },
+          { id: 'reviewing-changes', title: 'Reviewing proposed changes', description: 'Review code changes' },
+          { id: 'commenting-pull-request', title: 'Commenting on a pull request', description: 'Provide feedback' },
+          { id: 'approving-pull-request', title: 'Approving a pull request with required reviews', description: 'Approve changes' },
+        ]
+      }
+    ]
+  },
+  {
+    id: 'issues',
+    title: 'Issues',
+    description: 'Track bugs, feature requests, and other project work.',
+    sections: [
+      {
+        id: 'tracking-work',
+        title: 'Tracking your work with issues',
+        items: [
+          { id: 'about-issues', title: 'About issues', description: 'Learn about GitHub Issues' },
+          { id: 'creating-issue', title: 'Creating an issue', description: 'Report bugs and request features' },
+          { id: 'deleting-issue', title: 'Deleting an issue', description: 'Remove issues' },
+          { id: 'linking-pull-request', title: 'Linking a pull request to an issue', description: 'Connect PRs to issues' },
+        ]
+      },
+      {
+        id: 'planning-tracking',
+        title: 'Planning and tracking with Projects',
+        items: [
+          { id: 'about-projects', title: 'About Projects', description: 'Learn about GitHub Projects' },
+          { id: 'creating-project', title: 'Creating a project', description: 'Organize your work' },
+          { id: 'managing-project', title: 'Managing your project', description: 'Update project status' },
+          { id: 'closing-project', title: 'Closing and deleting your project', description: 'Archive completed projects' },
+        ]
+      }
+    ]
+  },
+  {
+    id: 'actions',
+    title: 'GitHub Actions',
+    description: 'Automate your workflow with GitHub Actions.',
+    sections: [
+      {
+        id: 'learn-actions',
+        title: 'Learn GitHub Actions',
+        items: [
+          { id: 'understanding-actions', title: 'Understanding GitHub Actions', description: 'Learn the basics of GitHub Actions' },
+          { id: 'finding-sharing-actions', title: 'Finding and customizing actions', description: 'Discover and use actions' },
+          { id: 'essential-features', title: 'Essential features of GitHub Actions', description: 'Key concepts and features' },
+          { id: 'expressions', title: 'Expressions', description: 'Use expressions in workflows' },
+        ]
+      },
+      {
+        id: 'using-workflows',
+        title: 'Using workflows',
+        items: [
+          { id: 'about-workflows', title: 'About workflows', description: 'Learn about workflow files' },
+          { id: 'triggering-workflow', title: 'Triggering a workflow', description: 'Workflow triggers and events' },
+          { id: 'workflow-syntax', title: 'Workflow syntax for GitHub Actions', description: 'YAML syntax reference' },
+          { id: 'storing-workflow-data', title: 'Storing workflow data as artifacts', description: 'Save build outputs' },
+        ]
+      }
+    ]
+  },
+  {
+    id: 'security',
+    title: 'Security',
+    description: 'Keep your code and data secure on GitHub.',
+    sections: [
+      {
+        id: 'getting-started-security',
+        title: 'Getting started with securing your repository',
+        items: [
+          { id: 'security-overview', title: 'About securing your repository', description: 'Repository security overview' },
+          { id: 'security-advisories', title: 'About security advisories', description: 'Manage security vulnerabilities' },
+          { id: 'security-policy', title: 'Adding a security policy', description: 'Create security guidelines' },
+          { id: 'reporting-vulnerability', title: 'Privately reporting a security vulnerability', description: 'Report security issues' },
+        ]
+      },
+      {
+        id: 'code-security',
+        title: 'Code security and analysis',
+        items: [
+          { id: 'code-scanning', title: 'About code scanning', description: 'Automated code analysis' },
+          { id: 'dependency-review', title: 'About dependency review', description: 'Review dependency changes' },
+          { id: 'secret-scanning', title: 'About secret scanning', description: 'Detect exposed secrets' },
+          { id: 'security-alerts', title: 'About security alerts', description: 'Vulnerability notifications' },
+        ]
+      }
+    ]
+  }
+];
