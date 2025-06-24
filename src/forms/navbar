@@ -1,0 +1,122 @@
+import React, { useState } from 'react';
+import {
+  AppBar,
+  Toolbar,
+  Typography,
+  Box,
+  TextField,
+  InputAdornment,
+  IconButton,
+  useTheme,
+  useMediaQuery,
+} from '@mui/material';
+import { Search, Menu, GitHub } from '@mui/icons-material';
+import { useNavigate } from 'react-router-dom';
+
+const Navbar: React.FC = () => {
+  const [searchValue, setSearchValue] = useState('');
+  const navigate = useNavigate();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+
+  const appBarStyles = {
+    backgroundColor: '#24292f',
+    boxShadow: 'inset 0 -1px 0 hsla(210,18%,87%,1)',
+  };
+
+  const toolbarStyles = {
+    justifyContent: 'space-between',
+    paddingTop: theme.spacing(1),
+    paddingBottom: theme.spacing(1),
+  };
+
+  const logoContainerStyles = {
+    display: 'flex',
+    alignItems: 'center',
+    gap: theme.spacing(2),
+  };
+
+  const logoButtonStyles = {
+    color: 'white',
+    padding: 0,
+  };
+
+  const titleStyles = {
+    color: 'white',
+    fontWeight: 600,
+    cursor: 'pointer',
+  };
+
+  const searchContainerStyles = {
+    flex: 1,
+    maxWidth: 400,
+    marginLeft: theme.spacing(4),
+    marginRight: theme.spacing(4),
+  };
+
+  const searchInputStyles = {
+    backgroundColor: '#f6f8fa',
+    borderRadius: '6px',
+    '& .MuiOutlinedInput-notchedOutline': {
+      border: '1px solid #d1d9e0',
+    },
+    '&:hover .MuiOutlinedInput-notchedOutline': {
+      border: '1px solid #0969da',
+    },
+  };
+
+  const menuButtonStyles = {
+    color: 'white',
+  };
+
+  return (
+    <AppBar position="static" sx={appBarStyles}>
+      <Toolbar sx={toolbarStyles}>
+        <Box sx={logoContainerStyles}>
+          <IconButton 
+            onClick={() => navigate('/')}
+            sx={logoButtonStyles}
+          >
+            <GitHub sx={{ fontSize: 32 }} />
+          </IconButton>
+          <Typography 
+            variant="h6" 
+            sx={titleStyles}
+            onClick={() => navigate('/')}
+          >
+            GitHub Docs
+          </Typography>
+        </Box>
+
+        {!isMobile && (
+          <Box sx={searchContainerStyles}>
+            <TextField
+              fullWidth
+              variant="outlined"
+              placeholder="Search GitHub Docs"
+              value={searchValue}
+              onChange={(e) => setSearchValue(e.target.value)}
+              size="small"
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <Search sx={{ fontSize: 16, color: '#656d76' }} />
+                  </InputAdornment>
+                ),
+                sx: searchInputStyles,
+              }}
+            />
+          </Box>
+        )}
+
+        {isMobile && (
+          <IconButton sx={menuButtonStyles}>
+            <Menu />
+          </IconButton>
+        )}
+      </Toolbar>
+    </AppBar>
+  );
+};
+
+export default Navbar;
