@@ -1,393 +1,434 @@
 import React from 'react';
-import {
-  Box,
-  Typography,
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import remarkBreaks from 'remark-breaks';
+import remarkEmoji from 'remark-emoji';
+import rehypeRaw from 'rehype-raw';
+import rehypeSanitize from 'rehype-sanitize';
+import { 
+  Box, 
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableContainer, 
+  TableHead, 
+  TableRow, 
   Paper,
-  Chip,
+  Typography,
+  Divider,
   Alert,
+  Chip,
+  useTheme
 } from '@mui/material';
-import Markdown from 'markdown-to-jsx';
+import { 
+  PlayArrow, 
+  VolumeUp, 
+  Code as CodeIcon,
+  Info,
+  Warning,
+  Error as ErrorIcon,
+  CheckCircle
+} from '@mui/icons-material';
 
 interface MarkdownRendererProps {
   content: string;
-  title?: string;
 }
 
-// Custom components for markdown rendering
-const MarkdownComponents = {
-  h1: ({ children, ...props }: any) => (
-    <Typography 
-      variant="h2" 
-      component="h1" 
-      gutterBottom 
-      sx={{ 
-        fontWeight: 700,
-        color: 'primary.main',
-        borderBottom: '2px solid',
-        borderColor: 'primary.light',
-        pb: 1,
-        mb: 3,
-      }}
-      {...props}
-    >
-      {children}
-    </Typography>
-  ),
-  h2: ({ children, ...props }: any) => (
-    <Typography 
-      variant="h3" 
-      component="h2" 
-      gutterBottom 
-      sx={{ 
-        fontWeight: 600,
-        color: 'primary.dark',
-        mt: 4,
-        mb: 2,
-      }}
-      {...props}
-    >
-      {children}
-    </Typography>
-  ),
-  h3: ({ children, ...props }: any) => (
-    <Typography 
-      variant="h4" 
-      component="h3" 
-      gutterBottom 
-      sx={{ 
-        fontWeight: 600,
-        mt: 3,
-        mb: 2,
-      }}
-      {...props}
-    >
-      {children}
-    </Typography>
-  ),
-  h4: ({ children, ...props }: any) => (
-    <Typography 
-      variant="h5" 
-      component="h4" 
-      gutterBottom 
-      sx={{ 
-        fontWeight: 600,
-        mt: 3,
-        mb: 1.5,
-      }}
-      {...props}
-    >
-      {children}
-    </Typography>
-  ),
-  h5: ({ children, ...props }: any) => (
-    <Typography 
-      variant="h6" 
-      component="h5" 
-      gutterBottom 
-      sx={{ 
-        fontWeight: 600,
-        mt: 2,
-        mb: 1,
-      }}
-      {...props}
-    >
-      {children}
-    </Typography>
-  ),
-  h6: ({ children, ...props }: any) => (
-    <Typography 
-      variant="subtitle1" 
-      component="h6" 
-      gutterBottom 
-      sx={{ 
-        fontWeight: 600,
-        mt: 2,
-        mb: 1,
-      }}
-      {...props}
-    >
-      {children}
-    </Typography>
-  ),
-  p: ({ children, ...props }: any) => (
-    <Typography 
-      variant="body1" 
-      paragraph 
-      sx={{ 
-        lineHeight: 1.7,
-        mb: 2,
-      }}
-      {...props}
-    >
-      {children}
-    </Typography>
-  ),
-  blockquote: ({ children, ...props }: any) => (
-    <Alert 
-      severity="info" 
-      sx={{ 
-        my: 2,
-        '& .MuiAlert-message': {
-          fontStyle: 'italic',
-        },
-      }}
-      {...props}
-    >
-      {children}
-    </Alert>
-  ),
-  code: ({ children, className, ...props }: any) => {
-    const isCodeBlock = className?.startsWith('lang-');
-    
-    if (isCodeBlock) {
-      const language = className.replace('lang-', '');
+const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content }) => {
+  const theme = useTheme();
+
+  const components = {
+    // Headers
+    h1: ({ children, ...props }: any) => (
+      <Typography 
+        variant="h1" 
+        component="h1" 
+        sx={{ 
+          marginBottom: 3,
+          paddingBottom: 2,
+          borderBottom: `2px solid ${theme.palette.divider}`,
+          color: theme.palette.text.primary,
+        }}
+        {...props}
+      >
+        {children}
+      </Typography>
+    ),
+    h2: ({ children, ...props }: any) => (
+      <Typography 
+        variant="h2" 
+        component="h2" 
+        sx={{ 
+          marginTop: 4,
+          marginBottom: 2,
+          color: theme.palette.text.primary,
+        }}
+        {...props}
+      >
+        {children}
+      </Typography>
+    ),
+    h3: ({ children, ...props }: any) => (
+      <Typography 
+        variant="h3" 
+        component="h3" 
+        sx={{ 
+          marginTop: 3,
+          marginBottom: 2,
+          color: theme.palette.text.primary,
+        }}
+        {...props}
+      >
+        {children}
+      </Typography>
+    ),
+    h4: ({ children, ...props }: any) => (
+      <Typography 
+        variant="h4" 
+        component="h4" 
+        sx={{ 
+          marginTop: 2,
+          marginBottom: 1.5,
+          color: theme.palette.text.primary,
+        }}
+        {...props}
+      >
+        {children}
+      </Typography>
+    ),
+
+    // Paragraphs
+    p: ({ children, ...props }: any) => (
+      <Typography 
+        variant="body1" 
+        component="p" 
+        sx={{ 
+          marginBottom: 2,
+          lineHeight: 1.7,
+          color: theme.palette.text.primary,
+        }}
+        {...props}
+      >
+        {children}
+      </Typography>
+    ),
+
+    // Lists
+    ul: ({ children, ...props }: any) => (
+      <Box 
+        component="ul" 
+        sx={{ 
+          paddingLeft: 3,
+          marginBottom: 2,
+          '& li': {
+            marginBottom: 0.5,
+            color: theme.palette.text.primary,
+          }
+        }}
+        {...props}
+      >
+        {children}
+      </Box>
+    ),
+    ol: ({ children, ...props }: any) => (
+      <Box 
+        component="ol" 
+        sx={{ 
+          paddingLeft: 3,
+          marginBottom: 2,
+          '& li': {
+            marginBottom: 0.5,
+            color: theme.palette.text.primary,
+          }
+        }}
+        {...props}
+      >
+        {children}
+      </Box>
+    ),
+
+    // Code blocks
+    code: ({ inline, className, children, ...props }: any) => {
+      if (inline) {
+        return (
+          <Chip
+            label={children}
+            size="small"
+            sx={{
+              backgroundColor: theme.palette.mode === 'dark' ? '#2d2d2d' : '#f5f5f5',
+              color: theme.palette.primary.main,
+              fontFamily: 'Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+              fontSize: '0.85em',
+              height: 'auto',
+              '& .MuiChip-label': {
+                padding: '2px 6px',
+              }
+            }}
+          />
+        );
+      }
+
       return (
-        <Paper 
-          elevation={0}
-          sx={{ 
-            bgcolor: 'grey.900',
-            color: 'common.white',
-            p: 2,
-            my: 2,
-            overflow: 'auto',
+        <Paper
+          elevation={1}
+          sx={{
+            backgroundColor: theme.palette.mode === 'dark' ? '#1a1a1a' : '#f8f9fa',
+            border: `1px solid ${theme.palette.divider}`,
             borderRadius: 2,
-            position: 'relative',
+            marginBottom: 2,
+            overflow: 'hidden',
           }}
         >
-          <Box sx={{ position: 'absolute', top: 8, right: 8 }}>
-            <Chip 
-              label={language} 
-              size="small" 
-              variant="outlined"
-              sx={{ 
-                color: 'common.white',
-                borderColor: 'grey.600',
-                fontSize: '0.75rem',
-              }}
-            />
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              padding: 1,
+              backgroundColor: theme.palette.mode === 'dark' ? '#2d2d2d' : '#e9ecef',
+              borderBottom: `1px solid ${theme.palette.divider}`,
+            }}
+          >
+            <CodeIcon sx={{ fontSize: 16, marginRight: 1, color: theme.palette.text.secondary }} />
+            <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>
+              {className?.replace('language-', '') || 'code'}
+            </Typography>
           </Box>
           <Box
             component="pre"
             sx={{
+              padding: 2,
               margin: 0,
+              overflow: 'auto',
               fontFamily: 'Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
               fontSize: '0.875rem',
               lineHeight: 1.5,
-              whiteSpace: 'pre-wrap',
-              wordBreak: 'break-word',
+              color: theme.palette.text.primary,
             }}
+            {...props}
           >
             <code>{children}</code>
           </Box>
         </Paper>
       );
-    }
+    },
 
-    return (
-      <Box
-        component="code"
-        sx={{
-          backgroundColor: 'action.hover',
-          color: 'error.main',
-          px: 0.5,
-          py: 0.25,
-          borderRadius: 1,
-          fontFamily: 'Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
-          fontSize: '0.875em',
+    // Tables
+    table: ({ children, ...props }: any) => (
+      <TableContainer 
+        component={Paper} 
+        elevation={1}
+        sx={{ 
+          marginBottom: 3,
+          border: `1px solid ${theme.palette.divider}`,
+          borderRadius: 2,
+        }}
+        {...props}
+      >
+        <Table size="small">
+          {children}
+        </Table>
+      </TableContainer>
+    ),
+    thead: ({ children, ...props }: any) => (
+      <TableHead {...props}>
+        {children}
+      </TableHead>
+    ),
+    tbody: ({ children, ...props }: any) => (
+      <TableBody {...props}>
+        {children}
+      </TableBody>
+    ),
+    tr: ({ children, ...props }: any) => (
+      <TableRow {...props}>
+        {children}
+      </TableRow>
+    ),
+    th: ({ children, ...props }: any) => (
+      <TableCell 
+        component="th" 
+        sx={{ 
+          fontWeight: 600,
+          backgroundColor: theme.palette.mode === 'dark' ? '#2d2d2d' : '#f8f9fa',
+          color: theme.palette.text.primary,
         }}
         {...props}
       >
         {children}
-      </Box>
-    );
-  },
-  pre: ({ children, ...props }: any) => (
-    <Paper 
-      elevation={0}
-      sx={{ 
-        bgcolor: 'grey.50',
-        p: 2,
-        my: 2,
-        overflow: 'auto',
-        borderRadius: 2,
-        border: '1px solid',
-        borderColor: 'divider',
-      }}
-      {...props}
-    >
-      <Box
-        component="pre"
-        sx={{
-          margin: 0,
-          fontFamily: 'Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
-          fontSize: '0.875rem',
-          lineHeight: 1.5,
-          whiteSpace: 'pre-wrap',
-          wordBreak: 'break-word',
-        }}
-      >
-        {children}
-      </Box>
-    </Paper>
-  ),
-  ul: ({ children, ...props }: any) => (
-    <Box 
-      component="ul" 
-      sx={{ 
-        my: 1,
-        pl: 3,
-        '& li': {
-          mb: 0.5,
-        },
-      }}
-      {...props}
-    >
-      {children}
-    </Box>
-  ),
-  ol: ({ children, ...props }: any) => (
-    <Box 
-      component="ol" 
-      sx={{ 
-        my: 1,
-        pl: 3,
-        '& li': {
-          mb: 0.5,
-        },
-      }}
-      {...props}
-    >
-      {children}
-    </Box>
-  ),
-  li: ({ children, ...props }: any) => (
-    <Typography 
-      component="li" 
-      variant="body1"
-      sx={{ 
-        lineHeight: 1.6,
-      }}
-      {...props}
-    >
-      {children}
-    </Typography>
-  ),
-  table: ({ children, ...props }: any) => (
-    <Paper 
-      elevation={0}
-      sx={{ 
-        width: '100%',
-        overflow: 'auto',
-        my: 2,
-        border: '1px solid',
-        borderColor: 'divider',
-      }}
-    >
-      <Box
-        component="table"
-        sx={{
-          width: '100%',
-          borderCollapse: 'collapse',
-          '& th, & td': {
-            borderBottom: '1px solid',
-            borderColor: 'divider',
-            p: 1.5,
-            textAlign: 'left',
-          },
-          '& th': {
-            backgroundColor: 'action.hover',
-            fontWeight: 600,
-          },
+      </TableCell>
+    ),
+    td: ({ children, ...props }: any) => (
+      <TableCell 
+        sx={{ 
+          color: theme.palette.text.primary,
         }}
         {...props}
       >
         {children}
-      </Box>
-    </Paper>
-  ),
-  img: ({ src, alt, ...props }: any) => (
-    <Box
-      component="img"
-      src={src}
-      alt={alt}
-      sx={{
-        maxWidth: '100%',
-        height: 'auto',
-        borderRadius: 2,
-        boxShadow: 1,
-        my: 2,
-      }}
-      {...props}
-    />
-  ),
-  a: ({ children, href, ...props }: any) => (
-    <Typography
-      component="a"
-      href={href}
-      sx={{
-        color: 'primary.main',
-        textDecoration: 'none',
-        '&:hover': {
-          textDecoration: 'underline',
-        },
-      }}
-      {...props}
-    >
-      {children}
-    </Typography>
-  ),
-  hr: ({ ...props }: any) => (
-    <Box
-      component="hr"
-      sx={{
-        border: 'none',
-        height: '1px',
-        backgroundColor: 'divider',
-        my: 4,
-      }}
-      {...props}
-    />
-  ),
-};
+      </TableCell>
+    ),
 
-const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, title }) => {
-  return (
-    <Box
-      component="article"
-      sx={{
-        maxWidth: '100%',
-        '& video, & audio': {
-          maxWidth: '100%',
-          height: 'auto',
-          borderRadius: 2,
-          my: 2,
-        },
-        '& iframe': {
-          maxWidth: '100%',
-          borderRadius: 2,
-        },
-      }}
-    >
-      {title && (
-        <Typography
-          variant="h1"
-          component="h1"
+    // Blockquotes
+    blockquote: ({ children, ...props }: any) => (
+      <Alert 
+        severity="info"
+        icon={<Info />}
+        sx={{ 
+          marginBottom: 2,
+          '& .MuiAlert-message': {
+            color: theme.palette.text.primary,
+          }
+        }}
+        {...props}
+      >
+        {children}
+      </Alert>
+    ),
+
+    // Horizontal rule
+    hr: ({ ...props }: any) => (
+      <Divider sx={{ marginY: 3 }} {...props} />
+    ),
+
+    // Links
+    a: ({ children, href, ...props }: any) => (
+      <Typography
+        component="a"
+        href={href}
+        sx={{
+          color: theme.palette.primary.main,
+          textDecoration: 'none',
+          fontWeight: 500,
+          '&:hover': {
+            textDecoration: 'underline',
+          }
+        }}
+        {...props}
+      >
+        {children}
+      </Typography>
+    ),
+
+    // Images
+    img: ({ src, alt, ...props }: any) => (
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'center',
+          marginBottom: 2,
+        }}
+      >
+        <Box
+          component="img"
+          src={src}
+          alt={alt}
           sx={{
-            fontSize: '2.5rem',
-            fontWeight: 800,
-            color: 'primary.main',
-            mb: 4,
-            pb: 2,
-            borderBottom: '3px solid',
-            borderColor: 'primary.main',
+            maxWidth: '100%',
+            height: 'auto',
+            borderRadius: 2,
+            boxShadow: theme.shadows[2],
+          }}
+          {...props}
+        />
+      </Box>
+    ),
+
+    // Video
+    video: ({ src, ...props }: any) => (
+      <Paper
+        elevation={2}
+        sx={{
+          marginBottom: 2,
+          borderRadius: 2,
+          overflow: 'hidden',
+        }}
+      >
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            padding: 1,
+            backgroundColor: theme.palette.mode === 'dark' ? '#2d2d2d' : '#e9ecef',
           }}
         >
-          {title}
-        </Typography>
-      )}
-      <Markdown options={{ overrides: MarkdownComponents }}>
+          <PlayArrow sx={{ fontSize: 16, marginRight: 1, color: theme.palette.text.secondary }} />
+          <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>
+            Video Content
+          </Typography>
+        </Box>
+        <Box
+          component="video"
+          controls
+          sx={{
+            width: '100%',
+            height: 'auto',
+          }}
+          {...props}
+        >
+          <source src={src} />
+          Your browser does not support the video tag.
+        </Box>
+      </Paper>
+    ),
+
+    // Audio
+    audio: ({ src, ...props }: any) => (
+      <Paper
+        elevation={1}
+        sx={{
+          marginBottom: 2,
+          borderRadius: 2,
+          overflow: 'hidden',
+        }}
+      >
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            padding: 1,
+            backgroundColor: theme.palette.mode === 'dark' ? '#2d2d2d' : '#e9ecef',
+          }}
+        >
+          <VolumeUp sx={{ fontSize: 16, marginRight: 1, color: theme.palette.text.secondary }} />
+          <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>
+            Audio Content
+          </Typography>
+        </Box>
+        <Box sx={{ padding: 2 }}>
+          <Box
+            component="audio"
+            controls
+            sx={{
+              width: '100%',
+            }}
+            {...props}
+          >
+            <source src={src} />
+            Your browser does not support the audio tag.
+          </Box>
+        </Box>
+      </Paper>
+    ),
+  };
+
+  return (
+    <Box
+      sx={{
+        '& > *:first-of-type': {
+          marginTop: 0,
+        },
+        '& > *:last-child': {
+          marginBottom: 0,
+        },
+      }}
+    >
+      <ReactMarkdown
+        components={components}
+        remarkPlugins={[remarkGfm, remarkBreaks, remarkEmoji]}
+        rehypePlugins={[rehypeRaw, rehypeSanitize]}
+      >
         {content}
-      </Markdown>
+      </ReactMarkdown>
     </Box>
   );
 };
