@@ -1,0 +1,214 @@
+import { useState, useCallback } from "react";
+import {
+  DataGrid,
+  GridColDef,
+  GridRenderCellParams,
+  GridRowParams,
+} from "@mui/x-data-grid";
+import {
+  Box,
+  CircularProgress,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow,
+  Typography,
+  Collapse,
+  IconButton,
+} from "@mui/material";
+import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
+import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
+import { toolsData, fetchToolDetails, ToolDetail } from "@/data/toolsData";
+
+const columns: GridColDef[] = [
+  {
+    field: "expand",
+    headerName: "",
+    width: 50,
+    sortable: false,
+    filterable: false,
+    disableColumnMenu: true,
+    renderCell: (params: GridRenderCellParams) => {
+      if (params.row._isDetail) return null;
+      return (
+        <IconButton size="small">
+          {params.row._expanded ? (
+            <KeyboardArrowUpIcon />
+          ) : (
+            <KeyboardArrowDownIcon />
+          )}
+        </IconButton>
+      );
+    },
+  },
+  { field: "tool", headerName: "Tool", flex: 1, minWidth: 150 },
+  { field: "version", headerName: "Version", flex: 1, minWidth: 120 },
+  { field: "versionMinus1", headerName: "Version - 1", flex: 1, minWidth: 120 },
+  { field: "versionMinus2", headerName: "Version - 2", flex: 1, minWidth: 120 },
+];
+
+interface DetailCache {
+  [toolId: number]: { loading: boolean; data: ToolDetail[] | null };
+}
+
+export default function ExpandableToolsGrid() {
+  const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set());
+  const [detailCache, setDetailCache] = useState<DetailCache>({});
+
+  const handleRowClick = useCallback(
+    async (params: GridRowParams) => {
+      if (params.row._isDetail) return;
+      const id = params.row.id as number;
+
+      setExpandedIds((prev) => {
+        const next = new Set(prev);
+        if (next.has(id)) {
+          next.delete(id);
+        } else {
+          next.add(id);
+          // Fetch if not cached
+          if (!detailCache[id]) {
+            setDetailCache((c) => ({
+              ...c,
+              [id]: { loading: true, data: null },
+            }));
+            fetchToolDetails(id).then((data) => {
+              setDetailCache((c) => ({ ...c, [id]: { loading: false, data } }));
+            });
+          }
+        }
+        return next;
+      });
+    },
+    [detailCache]
+  );
+
+  // Build rows: for each expanded row, insert a detail pseudo-row after it
+  const rows: any[] = [];
+  for (const tool of toolsData) {
+    const isExpanded = expandedIds.has(tool.id);
+    rows.push({ ...tool, _expanded: isExpanded, _isDetail: false });
+    if (isExpanded) {
+      rows.push({
+        id: `detail-${tool.id}`,
+        _isDetail: true,
+        _parentId: tool.id,
+        tool: "",
+        version: "",
+        versionMinus1: "",
+        versionMinus2: "",
+      });
+    }
+  }
+
+  return (
+    <Box sx={{ width: "100%", height: "100vh", p: 3 }}>
+      <Typography variant="h5" sx={{ mb: 2, fontWeight: 600 }}>
+        Tools Inventory
+      </Typography>
+      <DataGrid
+        rows={rows}
+        columns={columns.map((col) => {
+          if (col.field === "expand") return col;
+          return {
+            ...col,
+            renderCell: (params: GridRenderCellParams) => {
+              if (params.row._isDetail) {
+                // Only render detail panel in the "tool" column spanning visually
+                if (col.field === "tool") {
+                  return (
+                    <DetailPanel
+                      detail={detailCache[params.row._parentId]}
+                    />
+                  );
+                }
+                return null;
+              }
+              return params.value;
+            },
+          };
+        })}
+        onRowClick={handleRowClick}
+        getRowHeight={(params) => {
+          if (params.model?._isDetail) return "auto";
+          return 52;
+        }}
+        getRowClassName={(params) =>
+          params.row._isDetail ? "detail-row" : "data-row"
+        }
+        disableRowSelectionOnClick
+        hideFooterPagination={false}
+        pageSizeOptions={[10, 20, 50]}
+        initialState={{ pagination: { paginationModel: { pageSize: 50 } } }}
+        sx={{
+          border: "1px solid",
+          borderColor: "divider",
+          "& .detail-row": {
+            bgcolor: "action.hover",
+            "&:hover": { bgcolor: "action.hover" },
+          },
+          "& .detail-row .MuiDataGrid-cell": {
+            borderBottom: "none",
+            overflow: "visible !important",
+          },
+          "& .data-row": {
+            cursor: "pointer",
+          },
+        }}
+      />
+    </Box>
+  );
+}
+
+function DetailPanel({
+  detail,
+}: {
+  detail: { loading: boolean; data: ToolDetail[] | null } | undefined;
+}) {
+  if (!detail || detail.loading) {
+    return (
+      <Box sx={{ py: 2, display: "flex", alignItems: "center", gap: 1 }}>
+        <CircularProgress size={18} />
+        <Typography variant="body2" color="text.secondary">
+          Loading details…
+        </Typography>
+      </Box>
+    );
+  }
+
+  if (!detail.data || detail.data.length === 0) {
+    return (
+      <Typography variant="body2" color="text.secondary" sx={{ py: 2 }}>
+        No details available.
+      </Typography>
+    );
+  }
+
+  return (
+    <Box sx={{ py: 1, width: "100%" }}>
+      <Table size="small">
+        <TableHead>
+          <TableRow>
+            <TableCell sx={{ fontWeight: 600 }}>Product Name</TableCell>
+            <TableCell sx={{ fontWeight: 600 }}>Installs</TableCell>
+            <TableCell sx={{ fontWeight: 600 }}>Vendor</TableCell>
+            <TableCell sx={{ fontWeight: 600 }}>Release ID</TableCell>
+            <TableCell sx={{ fontWeight: 600 }}>Release Version</TableCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {detail.data.map((d) => (
+            <TableRow key={d.releaseId}>
+              <TableCell>{d.productName}</TableCell>
+              <TableCell>{d.installs.toLocaleString()}</TableCell>
+              <TableCell>{d.vendor}</TableCell>
+              <TableCell>{d.releaseId}</TableCell>
+              <TableCell>{d.releaseVersion}</TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </Box>
+  );
+}
