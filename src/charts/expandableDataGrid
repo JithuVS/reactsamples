@@ -111,20 +111,25 @@ export default function ExpandableToolsGrid() {
         rows={rows}
         columns={columns.map((col) => {
           if (col.field === "expand") return col;
-          return {
-            ...col,
-            renderCell: (params: GridRenderCellParams) => {
-              if (params.row._isDetail) {
-                // Only render detail panel in the "tool" column spanning visually
-                if (col.field === "tool") {
+          if (col.field === "tool") {
+            return {
+              ...col,
+              renderCell: (params: GridRenderCellParams) => {
+                if (params.row._isDetail) {
                   return (
                     <DetailPanel
                       detail={detailCache[params.row._parentId]}
                     />
                   );
                 }
-                return null;
-              }
+                return params.value;
+              },
+            };
+          }
+          return {
+            ...col,
+            renderCell: (params: GridRenderCellParams) => {
+              if (params.row._isDetail) return null;
               return params.value;
             },
           };
@@ -151,6 +156,24 @@ export default function ExpandableToolsGrid() {
           "& .detail-row .MuiDataGrid-cell": {
             borderBottom: "none",
             overflow: "visible !important",
+            clipPath: "none !important",
+          },
+          "& .detail-row .MuiDataGrid-cell[data-field='tool']": {
+            overflow: "visible !important",
+            width: "calc(100vw - 100px) !important",
+            maxWidth: "none !important",
+          },
+          "& .detail-row .MuiDataGrid-cell[data-field='expand']": {
+            visibility: "hidden",
+          },
+          "& .detail-row .MuiDataGrid-cell[data-field='version']": {
+            visibility: "hidden",
+          },
+          "& .detail-row .MuiDataGrid-cell[data-field='versionMinus1']": {
+            visibility: "hidden",
+          },
+          "& .detail-row .MuiDataGrid-cell[data-field='versionMinus2']": {
+            visibility: "hidden",
           },
           "& .data-row": {
             cursor: "pointer",
